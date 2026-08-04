@@ -77,17 +77,17 @@ export function Controls() {
 
         <ResetDialog
           destructive
-          title="Clear all rooms?"
+           title="Start over?"
           description="This will return every piece of art across all rooms back to the inventory tray."
-          confirmLabel="Clear all"
+           confirmLabel="Start over"
           onConfirm={resetAll}
           trigger={
             <button
               className="flex items-center gap-2 px-3 py-2 text-sm text-destructive/70 hover:text-destructive transition-colors outline-none focus-visible:ring-2 focus-visible:ring-destructive rounded-sm"
-              aria-label="Clear art from all rooms"
+               aria-label="Start over and clear art from all rooms"
             >
               <Trash2 size={16} />
-              <span className="hidden md:inline">Clear all</span>
+               <span className="hidden md:inline">Start over</span>
             </button>
           }
         />
