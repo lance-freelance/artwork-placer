@@ -114,10 +114,10 @@ export function Controls() {
       </div>
       {/* Large gap before the room-nav arrow */}
       <div className="h-10" />
-      {/* ── Previous-room arrow ── */}
+      {/* ── Previous-room arrow — slightly smaller than action buttons, matching the right arrow ── */}
       <button
         className={cn(
-          circle,
+          'w-10 h-10 rounded-full bg-secondary/90 backdrop-blur-sm shadow-md hover:bg-secondary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white flex items-center justify-center',
           activeIndex === 0 && 'opacity-0 pointer-events-none',
         )}
         disabled={activeIndex === 0}
