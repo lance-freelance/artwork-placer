@@ -1,0 +1,15 @@
+The live build currently renders the room canvas full-bleed to the viewport, with the room image stretched/covered to fill an arbitrary browser window shape. This drops the matte framing from the reference mockup entirely and visibly softens image quality (confirmed on the live URL — texture and foliage detail noticeably softer than the source room photo). This phase retrofits the canvas to a matted layout.
+
+Canvas layout — matted, not full-bleed
+
+The room canvas must not stretch or cover the full viewport. It is a fixed-aspect-ratio (16:10) box, inset within the viewport by a proportional margin (a percentage of viewport size, not fixed pixels) on all sides — a "matte" framing the room image, similar to a mounted photograph.
+
+The canvas box's rendered size is derived from whichever viewport dimension (width or height) is more constraining, so the matte grows or shrinks proportionally across different screen shapes and never forces the room image to crop or distort.
+The room image inside the canvas uses object-fit: contain behavior — never cover/stretch-to-fill. Image sharpness and the fidelity of placed art renders take priority over the canvas filling extra viewport space; a larger matte on unusual screen ratios is the correct trade-off, not a bug to fix by stretching.
+All placement math (bandSplit, object x/y percentages) is relative to the canvas box itself, not the full viewport — confirm existing percentage-based canvas-relative coordinates from Phase 1 still resolve correctly once the matte is added; this should not require changing how placements are stored, only how the canvas box is measured and positioned.
+Controls (undo/reset stack, chevrons, tray, room tabs) are positioned relative to the viewport, not the canvas — they sit in the matte area, not overlapping the room image edges.
+Phase 5 acceptance criteria
+No stretching or distortion of the room image at any viewport size.
+Visible matte margin on all four sides at every tested screen size, scaling proportionally rather than staying a fixed pixel value.
+Placed art remains correctly positioned relative to the room after the canvas resize logic changes — spot-check existing placements in each of the 4 rooms.
+Room image sharpness matches the source file (no more softening from stretch-scaling).
