@@ -1,5 +1,5 @@
 import { useStore } from '../state/Store';
-import { Undo2, RotateCcw, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Undo2, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ResetDialog } from './ResetDialog';
 
 export function Controls() {
@@ -60,34 +60,16 @@ export function Controls() {
         <div className="w-px h-4 bg-border mx-1 md:mx-2" />
 
         <ResetDialog
-          title="Reset this room?"
-          description={`This will return all art placed in the ${rooms[activeIndex].name} to the inventory tray.`}
-          confirmLabel="Reset room"
-          onConfirm={() => resetRoom(activeRoomId)}
+           roomName={rooms[activeIndex].name}
+           onResetRoom={() => resetRoom(activeRoomId)}
+           onResetAll={resetAll}
           trigger={
             <button
               className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
-              aria-label="Reset current room"
+               aria-label="Clear room"
             >
               <RotateCcw size={16} />
-              <span className="hidden sm:inline">Reset</span>
-            </button>
-          }
-        />
-
-        <ResetDialog
-          destructive
-           title="Start over?"
-          description="This will return every piece of art across all rooms back to the inventory tray."
-           confirmLabel="Start over"
-          onConfirm={resetAll}
-          trigger={
-            <button
-              className="flex items-center gap-2 px-3 py-2 text-sm text-destructive/70 hover:text-destructive transition-colors outline-none focus-visible:ring-2 focus-visible:ring-destructive rounded-sm"
-               aria-label="Start over and clear art from all rooms"
-            >
-              <Trash2 size={16} />
-               <span className="hidden md:inline">Start over</span>
+               <span className="hidden sm:inline">Clear room</span>
             </button>
           }
         />

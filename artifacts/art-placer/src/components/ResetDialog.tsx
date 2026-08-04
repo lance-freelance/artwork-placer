@@ -13,23 +13,19 @@ import {
 import { cn } from '@/lib/utils';
 
 /**
- * Confirmation gate in front of a destructive reset. Used for both
- * "reset this room" and "clear every room".
+ * Confirmation gate for clearing placed art. The scope is chosen inside the
+ * dialog so the toolbar only needs one clear-room control.
  */
 export function ResetDialog({
   trigger,
-  title,
-  description,
-  confirmLabel,
-  onConfirm,
-  destructive = false,
+  roomName,
+  onResetRoom,
+  onResetAll,
 }: {
   trigger: ReactNode;
-  title: string;
-  description: string;
-  confirmLabel: string;
-  onConfirm: () => void;
-  destructive?: boolean;
+  roomName: string;
+  onResetRoom: () => void;
+  onResetAll: () => void;
 }) {
   return (
     <AlertDialog>
@@ -37,20 +33,27 @@ export function ResetDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className="font-serif text-xl">
-            {title}
+            Clear room?
           </AlertDialogTitle>
-          <AlertDialogDescription>{description}</AlertDialogDescription>
+          <AlertDialogDescription>
+            Choose whether to clear the art from the {roomName} or return every
+            piece across all rooms to the inventory tray.
+          </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
-            onClick={onConfirm}
+            onClick={onResetRoom}
+          >
+            Clear this room
+          </AlertDialogAction>
+          <AlertDialogAction
+            onClick={onResetAll}
             className={cn(
-              destructive &&
-                'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+              'bg-destructive text-destructive-foreground hover:bg-destructive/90',
             )}
           >
-            {confirmLabel}
+            Start over
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
