@@ -35,7 +35,10 @@ export function Controls() {
     'disabled:opacity-30 disabled:cursor-not-allowed ' +
     'flex items-center justify-center';
 
-  const label = 'text-[11px] text-white/90 font-medium tracking-wide drop-shadow mt-1.5';
+  const label =
+    'text-xs text-white font-semibold tracking-wide mt-1.5 px-2 py-0.5 rounded-full ' +
+    'bg-black/25 backdrop-blur-[2px] shadow-sm ' +
+    '[text-shadow:0_1px_3px_rgba(0,0,0,0.95),0_0_6px_rgba(0,0,0,0.7)]';
 
   return (
     <div className="absolute left-4 top-[18%] z-20 flex flex-col items-center ml-[45px] mr-[45px]">
