@@ -4,9 +4,10 @@ import { TrayItem } from './TrayItem';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 /**
- * Floating art inventory tray. Positioned against the viewport (not the room
- * canvas) so it sits on the bottom matte — see the matte insets in MainLayout,
- * whose bottom floor is sized to keep this capsule clear of the photograph.
+ * Floating art inventory tray, sized to the room canvas and sitting in the
+ * bottom matte band. MainLayout measures this element to decide how much matte
+ * to reserve, so its height must stay independent of its width — keep the strip
+ * scrolling horizontally and never let it wrap.
  */
 export function InventoryTray() {
   const { artObjects } = useStore();
@@ -17,10 +18,10 @@ export function InventoryTray() {
   };
 
   const arrowClass =
-    'absolute top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:bg-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary text-foreground';
+    'absolute top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-white/85 backdrop-blur-sm shadow-sm hover:bg-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-foreground/50 text-foreground';
 
   return (
-    <div className="relative w-full bg-background/80 backdrop-blur-md rounded-2xl shadow-[0_8px_32px_-8px_rgba(60,50,40,0.35)] px-12 py-4">
+    <div className="relative w-full bg-background/85 backdrop-blur-md rounded-2xl shadow-[0_10px_30px_-12px_rgba(74,63,48,0.45)] px-12 py-4">
       <button
         onClick={() => scrollBy(-220)}
         className={`${arrowClass} left-1.5`}

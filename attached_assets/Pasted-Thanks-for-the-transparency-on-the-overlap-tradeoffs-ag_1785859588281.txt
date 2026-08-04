@@ -1,0 +1,11 @@
+Thanks for the transparency on the overlap tradeoffs — agreed on both counts, no changes needed there: transient dismissible overlays (reset confirmation, first-use hint) floating over the photo is correct, keep it as documented.
+
+Three fixes needed:
+
+1. Matte color — it's currently pure black. Change it to a warm cream/taupe tone (close to the wall tone in the room photos, not pure white or pure black — this was in the original visual-direction spec). This is likely the single biggest fix for how the layout currently reads.
+
+2. Matte scale — cap it, don't remove proportionality. Keep the proportional (not fixed-pixel) matte logic, but cap the margin so it doesn't grow past roughly 6–8% of the shorter viewport dimension on desktop/tablet. Also tighten the vertical gaps between the room-tab row and the canvas top edge, and between the canvas bottom edge and the tray — right now those read as three disconnected floating blocks; closing that spacing should help independent of the matte-size change.
+
+3. Mobile gutters — this is a bug, not a design tradeoff. The 88px fixed side gutters eating 45% of a 390px viewport contradicts the spec: the matte was supposed to be the natural leftover space from fitting the 16:10 canvas to whichever dimension is more constraining, not a fixed padding added on top of that fit. On a narrow portrait phone, width is the constraining dimension — the matte should end up almost entirely top/bottom, with the room image running close to edge-to-edge left/right. Please fix the gutter calculation rather than treating it as a layout choice.
+
+On the follow-up decision you flagged (where controls go once they lose their side-matte real estate on mobile): tuck Undo/Reset/chevrons into the top and/or bottom matte bands, not overlaid on the photo corners. Once the gutter bug above is fixed, portrait phones should have generous top/bottom matte space to hold them — the room image should stay fully unobstructed on mobile, same priority as everywhere else.

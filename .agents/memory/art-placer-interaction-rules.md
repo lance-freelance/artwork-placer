@@ -63,10 +63,18 @@ The room canvas is a fixed 16:10 box inset from the viewport by a proportional m
 
 **How to apply:** size the box by fitting 16:10 into the space left after the matte, driven by whichever axis is more constraining. Placements stay percentages of the *canvas box*, so the storage format never changes when the layout does — only how the box is measured. The photos are all 1600×1000, so `contain` fills the box exactly and percentages land true; a room image at a different aspect would letterbox inside the box and shift placements, so keep new room photos at 16:10.
 
-## Controls anchor to the matte gutter, not the viewport edge
+## The matte is leftover space, never reserved padding
 
-Persistent chrome (undo/reset stack, room chevrons, room pill, tray) is positioned against the viewport and must sit on the matte, never over the photo. Pin side controls to the gutter width rather than to `left-4`-style edge offsets.
+Persistent chrome (undo/reset stack, room chevrons, room pill, tray) must sit on the matte, never over the photo — but the matte is what is *left over* after fitting 16:10 into the space the chrome is not using. It is never fixed padding added on top of that fit.
 
-**Why:** an offset tuned by eye while the canvas was full-bleed put the control stack straight onto the image once the matte existed, and only on width-constrained windows — invisible on a normal laptop. Tying controls to the same variable that defines the matte makes the overlap impossible instead of merely unlikely.
+**Why:** reserving fixed side gutters wide enough to hold the controls ate ~45% of a 390px phone, squeezing the room into a strip. The user called this a bug, not a tradeoff: on a portrait phone width is the constraining axis, so the leftover belongs top/bottom and the room should run nearly edge-to-edge. Separately, an offset tuned by eye while the canvas was full-bleed once put the control stack straight onto the image on width-constrained windows only — invisible on a laptop.
 
-**How to apply:** the matte insets carry pixel floors sized to fit the closed controls; shrinking a floor pushes chrome onto the photo. Transient dismissible overlays (reset confirmation, first-use hint) are deliberately exempt and may float over the image — reserving permanent matte for them would cost every user roughly a fifth of the canvas for a card that shows once. Verify layout changes on a wide window *and* a tall/narrow one; the two constrain opposite axes.
+**How to apply:** measure real chrome heights and subtract them; do not hard-code pixel floors, which is what caused both failures. Controls move to whichever band actually exists — a side gutter only on wide landscape windows, otherwise a row in the bottom band. Decide that from a **viewport-only** media query, never from measured chrome, or the decision feeds back into the layout it drives. For the same reason anything whose height is measured must keep that height width-independent (no wrapping, no width-tied max-width), or box size and chrome height oscillate. Transient dismissible overlays (reset confirmation, first-use hint) are exempt and may float over the image — reserving permanent matte for them would cost every user roughly a fifth of the canvas for a card that shows once. Verify on a wide window *and* a tall/narrow one; the two constrain opposite axes.
+
+## The matte is a warm neutral sampled from the room walls, never black
+
+The board background must stay a warm cream/taupe in the same family as the wall tone of the room photographs. Do not return it to black or a cool grey.
+
+**Why:** on black the photos read as screenshots floating in a void; on a warm neutral they read as mounted prints. The user called this "the single biggest fix", so it is a stated preference, not a passing style choice.
+
+**How to apply:** the theme tokens were already a warm cream palette — the black board was an override masking them, so check the tokens before introducing new colour values. Chrome on the matte has to be dark-on-light to survive the change; anything still styled white-on-dark disappears. One asset trap: the header wordmark only ships as a *white* PNG with no dark variant, so it has to be recoloured by filter rather than swapped.

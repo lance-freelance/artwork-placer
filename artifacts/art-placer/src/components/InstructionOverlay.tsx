@@ -32,7 +32,11 @@ export function InstructionOverlay() {
           exit={{ opacity: 0, y: 4 }}
           transition={{ duration: 0.25 }}
           onClick={dismiss}
-          className="self-start bg-white/90 backdrop-blur-sm text-foreground rounded-xl px-3.5 py-2.5 shadow-md text-left outline-none focus-visible:ring-2 focus-visible:ring-primary max-w-[160px]"
+          // Absolute, so this never contributes to the measured height of the
+          // bottom chrome. In normal flow it would reserve matte while visible
+          // and reflow the whole board on dismiss; transient hints float over
+          // the photo instead.
+          className="absolute bottom-full left-0 mb-2.5 z-30 bg-white/90 backdrop-blur-sm text-foreground rounded-xl px-3.5 py-2.5 shadow-md text-left outline-none focus-visible:ring-2 focus-visible:ring-foreground/50 max-w-[160px]"
           aria-label="Dismiss hint"
         >
           <p className="text-[12px] font-medium leading-snug">
