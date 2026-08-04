@@ -48,10 +48,16 @@ export function MainLayout() {
         <RoomCarousel />
       </div>
 
-      {/* ── Top bar: room tabs and brand mark in one centred control ── */}
+      {/* ── Top bar: compact room pill and logo in one centred group ── */}
       <div className="absolute top-0 left-0 right-0 z-20 flex justify-center px-4 pt-4 pointer-events-none">
-        <div className="pointer-events-auto">
+        <div className="pointer-events-auto flex items-center gap-3">
           <RoomTabs />
+          <img
+            src={assetUrl('l3-white-horizontal-logo.png')}
+            alt="Living Luxury Lab"
+            className="h-10 w-auto max-w-[120px] object-contain"
+            draggable={false}
+          />
         </div>
       </div>
 
