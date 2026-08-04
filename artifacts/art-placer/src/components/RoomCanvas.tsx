@@ -61,7 +61,7 @@ export function RoomCanvas({ roomId, isActive }: { roomId: string, isActive: boo
         src={assetUrl(`rooms/${room.imageFilename}`)}
         alt={room.name}
         draggable={false}
-        className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none"
+        className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none scale-[1.2]"
       />
       
       {/* Placements */}
