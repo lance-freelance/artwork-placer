@@ -39,8 +39,7 @@ export function Controls() {
   const label = 'text-[11px] text-white/90 font-medium tracking-wide drop-shadow mt-1.5';
 
   return (
-    <div className="absolute left-4 top-[18%] z-20 flex flex-col items-center">
-
+    <div className="absolute left-4 top-[18%] z-20 flex flex-col items-center ml-[45px] mr-[45px]">
       {/* ── Undo ── */}
       <div className="relative flex flex-col items-center">
         <button
@@ -61,10 +60,8 @@ export function Controls() {
         </button>
         <span className={label}>Undo</span>
       </div>
-
       {/* Small gap between Undo and Reset */}
       <div className="h-3" />
-
       {/* ── Reset (with inline popover) ── */}
       <div className="relative flex flex-col items-center" ref={resetRef}>
         <button
@@ -115,10 +112,8 @@ export function Controls() {
           )}
         </AnimatePresence>
       </div>
-
       {/* Large gap before the room-nav arrow */}
       <div className="h-10" />
-
       {/* ── Previous-room arrow ── */}
       <button
         className={cn(
