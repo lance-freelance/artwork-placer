@@ -30,7 +30,13 @@ export function RoomTabs() {
     // min-w-0 lets the capsule shrink below its content width; without it the
     // flex item refuses to shrink and the last room name runs off screen
     // instead of scrolling.
-    <div className="flex items-center gap-1 bg-foreground/[0.07] backdrop-blur-md rounded-full px-1 py-1 min-w-0 max-w-full overflow-x-auto hide-scrollbar">
+    // No backdrop-blur here. A backdrop-filter on the *same* element that
+    // scrolls forces a compositing layer that several mobile GPUs fail to
+    // sample, painting the capsule solid black — and since the tint below is
+    // only 7% opaque, the blur was almost all of what you saw, so the failure
+    // took the label text with it. The matte behind is a flat colour, so the
+    // blur bought nothing visually; the plain tint composites identically.
+    <div className="flex items-center gap-1 bg-foreground/[0.07] rounded-full px-1 py-1 min-w-0 max-w-full overflow-x-auto hide-scrollbar">
       {rooms.map((room) => {
         const isActive = room.id === activeRoomId;
         const hasArt = placements.some((p) => p.roomId === room.id);

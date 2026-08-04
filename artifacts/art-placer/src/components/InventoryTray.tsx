@@ -21,7 +21,11 @@ export function InventoryTray() {
     'absolute top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-9 h-9 rounded-full bg-white/85 backdrop-blur-sm shadow-sm hover:bg-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-foreground/50 text-foreground';
 
   return (
-    <div className="relative w-full bg-background/85 backdrop-blur-md rounded-2xl shadow-[0_10px_30px_-12px_rgba(74,63,48,0.45)] px-12 py-4 pt-[15px] pb-[15px] mt-[0px] mb-[0px] ml-[0px] mr-[0px]">
+    // 80% of the canvas box, centred, so the tray reads as a narrower shelf
+    // beneath the photograph rather than matching its edges. Safe to narrow:
+    // the strip scrolls horizontally and every item is shrink-0, so height
+    // stays width-independent and MainLayout's measurement cannot oscillate.
+    <div className="relative w-4/5 mx-auto bg-background/85 backdrop-blur-md rounded-2xl shadow-[0_10px_30px_-12px_rgba(74,63,48,0.45)] px-12 py-4 pt-[15px] pb-[15px] mt-[0px] mb-[0px] ml-[0px] mr-[0px]">
       <button
         onClick={() => scrollBy(-220)}
         className={`${arrowClass} left-1.5`}

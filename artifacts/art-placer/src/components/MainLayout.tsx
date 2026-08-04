@@ -136,8 +136,15 @@ export function MainLayout() {
           row's height is measured to size the canvas, so tying its width to the
           canvas would let wrapping feed back into the box it just resized.
         */}
+        {/*
+          flex-nowrap, not wrap: this row's height is measured to size the
+          canvas, so a row that reflows makes its own height width-dependent
+          and the box size and chrome height can oscillate. The capsule already
+          carries min-w-0 + overflow-x-auto, so it absorbs narrow widths by
+          scrolling instead of pushing the wordmark onto a second line.
+        */}
         <div
-          className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2"
+          className="flex flex-nowrap items-center justify-center gap-x-3"
           style={{ width: 'var(--avail-w)' }}
         >
           <RoomTabs />

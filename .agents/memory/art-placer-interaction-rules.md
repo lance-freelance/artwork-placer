@@ -78,3 +78,11 @@ The board background must stay a warm cream/taupe in the same family as the wall
 **Why:** on black the photos read as screenshots floating in a void; on a warm neutral they read as mounted prints. The user called this "the single biggest fix", so it is a stated preference, not a passing style choice.
 
 **How to apply:** the theme tokens were already a warm cream palette — the black board was an override masking them, so check the tokens before introducing new colour values. Chrome on the matte has to be dark-on-light to survive the change; anything still styled white-on-dark disappears. One asset trap: the header wordmark only ships as a *white* PNG with no dark variant, so it has to be recoloured by filter rather than swapped.
+
+## backdrop-filter on a scrolling element paints black on mobile GPUs
+
+Never put `backdrop-blur` on the same element that also scrolls (`overflow-x-auto`), and never let a blur be the main source of an element's visible fill. The scroll container forces a compositing layer that several mobile GPUs fail to sample, and the element paints solid black — taking any dark-on-light text with it.
+
+**Why:** the room-selector capsule was `bg-foreground/[0.07]` + `backdrop-blur-md` + `overflow-x-auto`. At 7% opacity the blur *was* the background, so on a real phone the whole capsule went black and unreadable while looking perfect in desktop Chrome. Buttons still worked, which makes it read as a styling bug rather than a paint bug.
+
+**How to apply:** the matte behind the chrome is a flat colour, so a blur buys nothing there — a plain tint composites identically. If a translucent surface must survive a backdrop-filter failure, keep its own background opaque enough to carry the contrast alone. Desktop preview will not reproduce this; judge it on a device.
