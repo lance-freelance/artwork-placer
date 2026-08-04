@@ -1,0 +1,80 @@
+Build a responsive, touch-first single-page web app that functions like a digital felt board for placing artwork inside a carousel of rooms.
+
+Core experience
+Display one room at a time. Users swipe horizontally or use prev/next controls to move through a carousel of rooms.
+A persistent inventory tray runs along the bottom of the screen, horizontally scrollable on small screens, with prev/next chevron buttons on either end as an additional way to page through it (touch-scroll and chevrons both work).
+Inventory includes at least 6 framed artworks (mixed portrait, landscape, square, oversized) and 2 sculptures, each a distinct draggable thumbnail.
+Users tap/click, drag, drop, and reposition each object using Pointer Events (pointerdown/pointermove/pointerup + pointer capture). Do not use native HTML5 drag-and-drop — it is unreliable on touch devices.
+Placement rule — simplified banding (not zone rectangles)
+
+Each room defines a single horizontal split value (bandSplit, a percentage of canvas height):
+
+Wall art may only be placed above the bandSplit line.
+Sculptures may only be placed below the bandSplit line.
+No polygon/zone authoring — placement validity is a single Y-coordinate comparison against bandSplit.
+
+While dragging:
+
+Highlight the valid band, dim/reject the invalid one.
+Object follows the pointer, gets slightly larger/elevated while dragging.
+Show a dashed crosshair guide centered on the object's current pointer position while it's over a valid band — this previews exactly where it will land if released right now. This is a visual readability aid only; it does not pull or snap the object toward any fixed point. Placement stays freeform anywhere within the valid band (above/below bandSplit), not discrete positions.
+Prevent unintended page scroll during drag.
+On release: if the pointer is within a valid band, the object settles at that exact position (small elevation/shadow easing back to resting state is fine — this is a visual settle, not a positional snap). If released in an invalid band, return to prior position (or the tray).
+Inventory & state behavior
+Each object is unique. Placing it removes it from the tray, stores { objectId, roomId, x, y, scale, band }, and keeps it visible only in that room.
+Objects can be repositioned within a room, or returned to the tray via a remove action or drag-back.
+Changing rooms must not reset any room's placements.
+State persists only in memory for this phase (survives room navigation, not a page refresh). Structure state so a persistence layer can be swapped in later (Phase 2) without a rewrite.
+Controls
+Prev/next room buttons, swipe navigation, room position indicator, indicator showing which rooms have placed art.
+Undo last action (single-step undo is fine for Phase 1).
+Reset current room / reset all rooms, each with a confirmation dialog.
+Small first-use instruction overlay.
+Accessibility alternative to dragging: select an inventory object, then tap a valid band to place it.
+Room & object data structure
+
+Use hardcoded placeholder data for now, shaped exactly as it will be read from Replit DB in Phase 2:
+
+ts
+// Room
+{
+  id: string,
+  name: string,
+  imageFilename: string,   // references /public/rooms/<file>
+  bandSplit: number         // 0–100, % of canvas height
+}
+
+// Art/Sculpture object
+{
+  id: string,
+  name: string,
+  type: "wall" | "sculpture",
+  thumbnailFilename: string, // references /public/art/<file>
+  fullImageFilename: string,
+  aspectRatio: number,
+  defaultScale: number,
+  minScale: number,
+  maxScale: number
+}
+
+Create 4 sample rooms — Living Room, Loft, Office, Primary Suite — and use images placed in /public/rooms/. Room image spec (document this in the README): 1600×1000px, 16:10 ratio. All room images must match this spec — no auto-detection or validation needed for Phase 1, just conform to the published spec.
+
+Placeholder art goes in /public/art/ as transparent PNG/SVG.
+
+Technology
+
+React, TypeScript, Vite, Tailwind or CSS modules, Pointer Events for drag. Organize into components: App, RoomCarousel, RoomCanvas, PlacementBand, ArtObject, InventoryTray, RoomIndicator, ResetDialog, InstructionOverlay.
+
+Visual direction
+
+Soft tactile textures, rounded inventory pieces, subtle shadows, gentle elevation on drag, warm neutral colors, minimal controls, museum/editorial sensibility. Not an ecommerce grid, not a pro design tool. Include a small brand mark/wordmark in the top corner (placeholder text is fine, e.g. "Living Luxury Lab") — treat it as a configurable label, not hardcoded copy, so it can be swapped later.
+
+Phase 1 acceptance criteria
+Works with mouse and touch input.
+Wall art and sculptures respect the band rule; invalid drops are rejected.
+Inventory updates immediately; placements persist across room navigation (not refresh).
+Undo, reset current room, and reset all work.
+Usable across tablet, desktop, mobile.
+Runs with a single Replit start command.
+
+Build the interaction system first with placeholder assets. Confirm drag/placement/reset all work correctly before requesting Phase 2.

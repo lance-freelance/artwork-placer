@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Living Luxury Lab — Art Placer"
+description = "A touch-first single-page web app that works like a digital felt board: users swipe through a carousel of interior room photographs and drag framed artworks and sculptures from a bottom inventory tray into the room. Wall art may only be placed above a per-room horizontal band split; sculptures only below it. Includes freeform pointer-event dragging, repositioning, undo, per-room and global reset with confirmation, a first-use instruction overlay, and a keyboard/tap accessible placement alternative."
+version = "1.0.0"
+id = "artifacts/art-placer"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19651
+
+[services.development]
+run = "pnpm --filter @workspace/art-placer run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/art-placer", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/art-placer/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19651"
+BASE_PATH = "/"
