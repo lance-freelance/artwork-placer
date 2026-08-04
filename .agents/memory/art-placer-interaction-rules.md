@@ -86,3 +86,16 @@ Never put `backdrop-blur` on the same element that also scrolls (`overflow-x-aut
 **Why:** the room-selector capsule was `bg-foreground/[0.07]` + `backdrop-blur-md` + `overflow-x-auto`. At 7% opacity the blur *was* the background, so on a real phone the whole capsule went black and unreadable while looking perfect in desktop Chrome. Buttons still worked, which makes it read as a styling bug rather than a paint bug.
 
 **How to apply:** the matte behind the chrome is a flat colour, so a blur buys nothing there — a plain tint composites identically. If a translucent surface must survive a backdrop-filter failure, keep its own background opaque enough to carry the contrast alone. Desktop preview will not reproduce this; judge it on a device.
+
+## A cancelled pointer gesture must never commit
+
+`pointercancel` and `pointerup` mean opposite things and must not share a handler. Cancel fires when the OS takes the gesture away (palm rejection, system edge swipe, a scroll container claiming the contact); its last known coordinate is wherever the interruption happened, not where the user meant to let go. Routing it into the drop path places artwork at an arbitrary spot.
+
+Two further traps found together with it:
+
+- A window-level safety net that only clears *visual* drag state is not enough. The refs inside whichever component owned the gesture stay armed, and the next `pointerup` re-runs the drop with stale geometry — committing a second placement after the ghost has already vanished. The safety net has to reach the owning hook's teardown. A module-level registry of teardowns keeps the store from having to know about individual component refs.
+- That teardown must not clear the "just dragged" flag when nothing is in flight. The same `pointerup` that completes a drag bubbles on to window immediately afterwards, and clearing the flag there lets the trailing synthetic click toggle selection on the piece the user just dropped.
+
+**Why:** all three surfaced together as "drag gets stuck / ghost strays / drops land in the wrong place" on a large tablet, and none of them reproduce with a mouse on a desktop browser.
+
+**How to apply:** `touch-action` is latched by the browser when the gesture *starts*, so changing it mid-gesture cannot rescue a contact the browser has already claimed for panning — treat a clean cancel as the real protection, not a way to prevent cancels. Also keep the window listeners bubble-phase: React's delegated handler runs at the root, so a capture-phase window listener would abort every normal drop.

@@ -6,6 +6,7 @@ import {
   useReplacePlacements,
 } from '@workspace/api-client-react';
 import { isValidBand } from '@/lib/placement';
+import { abortActivePointerDrags } from '../hooks/usePointerDrag';
 import type { ArtObject, Placement, Room } from '../types';
 
 interface DragState {
@@ -248,7 +249,19 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   // the gesture, the window losing focus), the piece would otherwise stay
   // stranded in the drag layer with nothing left to release it.
   useEffect(() => {
-    const clear = () => setDragState(null);
+    const clear = () => {
+      // Clearing dragState only hides the ghost — the refs inside whichever
+      // component owned the gesture would stay armed, and the next pointerup
+      // would re-run its drop with stale geometry, committing a second
+      // placement the user never asked for. Tear the gesture down first, then
+      // drop the visual state.
+      abortActivePointerDrags();
+      setDragState(null);
+    };
+    // These must stay bubble-phase. React's delegated handler sits on the root
+    // container, so on a normal release finish() runs first and leaves nothing
+    // in flight, which makes the teardown above a no-op. Switching any of these
+    // to capture would invert that order and silently abort every valid drop.
     window.addEventListener('pointerup', clear);
     window.addEventListener('pointercancel', clear);
     window.addEventListener('blur', clear);

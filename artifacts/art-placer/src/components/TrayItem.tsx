@@ -76,6 +76,12 @@ export function TrayItem({ objectId }: { objectId: string }) {
       }
       setDragState(null);
     },
+    // Interrupted, not released: drop the geometry and clear the ghost without
+    // resolving a placement, so the piece simply stays in the tray.
+    onDragCancel: () => {
+      grab.current = null;
+      setDragState(null);
+    },
   });
 
   if (isPlaced && !isDragging) return null;

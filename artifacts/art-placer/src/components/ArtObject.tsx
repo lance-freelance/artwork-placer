@@ -72,6 +72,12 @@ export function ArtObject({ placement }: { placement: Placement }) {
       }
       setDragState(null);
     },
+    // Interrupted, not released: drop the geometry and clear the ghost without
+    // resolving anything, so the piece stays exactly where it already was.
+    onDragCancel: () => {
+      grab.current = null;
+      setDragState(null);
+    },
   });
 
   if (placement.roomId !== activeRoomId) return null;
