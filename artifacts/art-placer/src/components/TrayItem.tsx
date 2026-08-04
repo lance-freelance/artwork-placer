@@ -1,7 +1,10 @@
+import { useRef } from 'react';
 import { useStore } from '../state/Store';
 import { artObjects } from '../data/objects';
+import { rooms } from '../data/rooms';
 import { usePointerDrag } from '../hooks/usePointerDrag';
 import { cn } from '@/lib/utils';
+import { resolveDrop, type DragGeometry } from '@/lib/placement';
 import { assetUrl } from '../types';
 
 /**
@@ -16,8 +19,13 @@ export function TrayItem({ objectId }: { objectId: string }) {
     selectedObjectId,
     setSelectedObjectId,
     placements,
+    placeObject,
+    canvasElRef,
+    activeRoomId,
   } = useStore();
   const obj = artObjects.find((o) => o.id === objectId)!;
+  const activeRoom = rooms.find((r) => r.id === activeRoomId);
+  const grab = useRef<DragGeometry | null>(null);
   const isDragging = dragState?.objectId === objectId;
   const isPlaced = placements.some((p) => p.objectId === objectId);
   const isSelected = selectedObjectId === objectId;
@@ -29,15 +37,21 @@ export function TrayItem({ objectId }: { objectId: string }) {
       setSelectedObjectId(null);
       const width = roomWidth * obj.defaultScale;
       const height = width / obj.aspectRatio;
+      // Held in a ref rather than read back from dragState: a quick flick can
+      // reach pointerup before React has committed the drag-start render.
+      const geometry: DragGeometry = {
+        width,
+        height,
+        offsetX: width / 2,
+        offsetY: height / 2,
+      };
+      grab.current = geometry;
       setDragState({
         objectId,
         source: 'tray',
         clientX: p.clientX,
         clientY: p.clientY,
-        width,
-        height,
-        offsetX: width / 2,
-        offsetY: height / 2,
+        ...geometry,
       });
     },
     onDragMove: (p) => {
@@ -46,16 +60,20 @@ export function TrayItem({ objectId }: { objectId: string }) {
       );
     },
     onDragEnd: (p) => {
-      window.dispatchEvent(
-        new CustomEvent('art-drop', {
-          detail: {
-            clientX: p.clientX,
-            clientY: p.clientY,
-            objectId,
-            source: 'tray',
-          },
-        }),
-      );
+      const geometry = grab.current;
+      grab.current = null;
+      if (geometry && activeRoom) {
+        const result = resolveDrop({
+          canvasEl: canvasElRef.current,
+          room: activeRoom,
+          object: obj,
+          source: 'tray',
+          clientX: p.clientX,
+          clientY: p.clientY,
+          ...geometry,
+        });
+        if (result.action === 'place') placeObject(result.placement);
+      }
       setDragState(null);
     },
   });

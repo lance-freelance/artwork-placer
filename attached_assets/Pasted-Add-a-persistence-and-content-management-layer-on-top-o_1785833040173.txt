@@ -1,0 +1,35 @@
+Add a persistence and content-management layer on top of the working Phase 1 app. No file upload UI — images are managed by hand in /public/rooms/ and /public/art/ via Replit's file browser.
+
+Storage
+Use Replit DB to store structured metadata only (never binary image data):
+Rooms: { id, name, imageFilename, bandSplit }
+Art objects: { id, name, type, thumbnailFilename, fullImageFilename, aspectRatio, defaultScale, minScale, maxScale }
+Placements: { objectId, roomId, x, y, scale }
+On load, the main app reads rooms/art/placements from Replit DB instead of hardcoded arrays. Placements now persist across page refresh, not just in-session.
+Admin panel (unlisted route, e.g. /admin — not linked in main nav, no auth for this prototype)
+
+A simple form-based interface, not a CMS:
+
+Rooms tab
+
+Dropdown listing image filenames already present in /public/rooms/ (read the directory server-side).
+Fields: name, bandSplit (implement as a draggable horizontal line overlaid on a live room image preview, outputting a % value — not a raw number input).
+Save writes the room record to Replit DB.
+Display the required room image spec (1600×1000px, 16:10) directly in this tab so anyone adding images knows the target before uploading.
+
+Art tab
+
+Dropdown listing filenames already present in /public/art/.
+On selecting a file, auto-detect and pre-fill a suggested aspect ratio from the image's natural dimensions.
+Admin can manually override the suggested aspect ratio and set defaultScale/minScale/maxScale before saving.
+Fields: name, type (wall/sculpture), thumbnail file, full-image file, aspect ratio (auto-suggested, editable), scale range.
+Save writes the art record to Replit DB.
+
+List/manage view
+
+Simple table of existing rooms and art objects with edit/delete.
+Phase 2 acceptance criteria
+Adding a new image to /public/art/ or /public/rooms/ makes it selectable in the admin panel without a code change.
+Saving a room or art record in the admin panel makes it appear in the live felt board without a rebuild.
+Placements survive a full page refresh.
+Admin route is reachable but not linked from the main app nav

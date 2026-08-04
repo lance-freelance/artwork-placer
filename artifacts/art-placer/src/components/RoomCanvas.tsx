@@ -1,29 +1,27 @@
 import { useEffect, useRef } from 'react';
 import { useStore } from '../state/Store';
 import { rooms } from '../data/rooms';
-import { artObjects } from '../data/objects';
 import { ArtObject } from './ArtObject';
 import { cn } from '@/lib/utils';
 import { assetUrl } from '../types';
 import { PlacementBand } from './PlacementBand';
-import { clampToCanvas, isValidBand } from '@/lib/placement';
 
 export function RoomCanvas({ roomId, isActive }: { roomId: string, isActive: boolean }) {
-  const { 
-    setRoomWidth, 
-    placeObject, 
-    removePlacement, 
-    activeRoomId,
-    dragState
-  } = useStore();
-  
+  const { setRoomWidth, canvasElRef, placements } = useStore();
+
   const room = rooms.find(r => r.id === roomId)!;
   const containerRef = useRef<HTMLDivElement>(null);
-  const dragStateRef = useRef(dragState);
 
+  // Publish this canvas as the one drops are measured against while it is the
+  // room on screen.
   useEffect(() => {
-    dragStateRef.current = dragState;
-  }, [dragState]);
+    if (!isActive) return;
+    const el = containerRef.current;
+    canvasElRef.current = el;
+    return () => {
+      if (canvasElRef.current === el) canvasElRef.current = null;
+    };
+  }, [isActive, canvasElRef]);
 
   useEffect(() => {
     if (!isActive || !containerRef.current) return;
@@ -36,58 +34,6 @@ export function RoomCanvas({ roomId, isActive }: { roomId: string, isActive: boo
     return () => observer.disconnect();
   }, [isActive, setRoomWidth]);
 
-  useEffect(() => {
-    if (!isActive) return;
-
-    const handleDrop = (e: CustomEvent) => {
-      const { clientX, clientY, objectId } = e.detail;
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (!rect) return;
-
-      const obj = artObjects.find(o => o.id === objectId)!;
-      
-      if (clientY > rect.bottom + 20) {
-        removePlacement(objectId);
-        return;
-      }
-
-      const isInside = clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom;
-      const currentDrag = dragStateRef.current;
-      
-      if (isInside && currentDrag) {
-        const objectCenterX = clientX - currentDrag.offsetX + currentDrag.width / 2;
-        const objectCenterY = clientY - currentDrag.offsetY + currentDrag.height / 2;
-        
-        const pctCenterX = ((objectCenterX - rect.left) / rect.width) * 100;
-        const pctCenterY = ((objectCenterY - rect.top) / rect.height) * 100;
-        
-        if (isValidBand(obj.type, pctCenterY, room.bandSplit)) {
-          const { x, y } = clampToCanvas(pctCenterX, pctCenterY);
-          placeObject({
-            objectId,
-            roomId,
-            x,
-            y,
-            scale: obj.defaultScale,
-            band: obj.type
-          });
-        }
-      }
-    };
-
-    const handleRemove = (e: CustomEvent) => {
-      removePlacement(e.detail.objectId);
-    };
-
-    window.addEventListener('art-drop', handleDrop as EventListener);
-    window.addEventListener('art-remove', handleRemove as EventListener);
-    return () => {
-      window.removeEventListener('art-drop', handleDrop as EventListener);
-      window.removeEventListener('art-remove', handleRemove as EventListener);
-    };
-  }, [isActive, room, placeObject, removePlacement]);
-
-  const { placements } = useStore();
   const roomPlacements = placements.filter(p => p.roomId === roomId);
 
   return (

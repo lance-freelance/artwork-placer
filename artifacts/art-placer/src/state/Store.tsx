@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import type { Placement } from '../types';
 
 interface DragState {
@@ -35,6 +35,14 @@ interface StoreContextValue {
   
   roomWidth: number;
   setRoomWidth: (w: number) => void;
+
+  /**
+   * The room canvas currently on screen. Drop maths needs its box, and the
+   * pieces that need it live outside it (the tray, the drag layer), so the
+   * active canvas registers itself here rather than the components trying to
+   * find each other.
+   */
+  canvasElRef: React.MutableRefObject<HTMLDivElement | null>;
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -46,6 +54,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [roomWidth, setRoomWidth] = useState(1000);
+  const canvasElRef = useRef<HTMLDivElement | null>(null);
 
   // Undo is deliberately single-step: we keep only the state immediately
   // before the last action, never a full stack.
@@ -102,7 +111,8 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     undo, resetRoom, resetAll,
     selectedObjectId, setSelectedObjectId,
     dragState, setDragState,
-    roomWidth, setRoomWidth
+    roomWidth, setRoomWidth,
+    canvasElRef
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
