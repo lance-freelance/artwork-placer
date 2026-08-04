@@ -1,11 +1,10 @@
 import useEmblaCarousel from 'embla-carousel-react';
-import { rooms } from '../data/rooms';
 import { RoomCanvas } from './RoomCanvas';
 import { useStore } from '../state/Store';
 import { useEffect, useCallback } from 'react';
 
 export function RoomCarousel() {
-  const { activeRoomId, setActiveRoomId } = useStore();
+  const { rooms, activeRoomId, setActiveRoomId } = useStore();
   // `watchDrag: false` is deliberate: rooms change only through the prev/next
   // controls and the room dots. A draggable carousel competes with dragging
   // art — Embla steals the pointer mid-placement and the piece gets stranded.
@@ -23,7 +22,7 @@ export function RoomCarousel() {
     if (!emblaApi) return;
     const index = emblaApi.selectedScrollSnap();
     setActiveRoomId(rooms[index].id);
-  }, [emblaApi, setActiveRoomId]);
+  }, [emblaApi, rooms, setActiveRoomId]);
 
   useEffect(() => {
     if (!emblaApi) return;

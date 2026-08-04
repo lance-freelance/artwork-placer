@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useStore } from '../state/Store';
-import { artObjects } from '../data/objects';
 import { Room } from '../types';
 import { cn } from '@/lib/utils';
 import { clampToCanvas, isValidBand } from '@/lib/placement';
 
 export function PlacementBand({ room, canvasRef }: { room: Room, canvasRef: React.RefObject<HTMLDivElement | null> }) {
-  const { dragState, selectedObjectId, placeObject, setSelectedObjectId } = useStore();
+  const { dragState, selectedObjectId, placeObject, setSelectedObjectId, artObjects } = useStore();
   
   const activeObject = dragState 
     ? artObjects.find(o => o.id === dragState.objectId) 
@@ -59,7 +58,6 @@ export function PlacementBand({ room, canvasRef }: { room: Room, canvasRef: Reac
       x,
       y,
       scale: obj.defaultScale,
-      band: obj.type
     });
     setSelectedObjectId(null);
   };

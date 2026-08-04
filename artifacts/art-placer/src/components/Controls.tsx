@@ -1,10 +1,9 @@
 import { useStore } from '../state/Store';
 import { Undo2, RotateCcw, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { rooms } from '../data/rooms';
 import { ResetDialog } from './ResetDialog';
 
 export function Controls() {
-  const { history, undo, resetRoom, resetAll, activeRoomId, setActiveRoomId } =
+  const { rooms, history, undo, resetRoom, resetAll, activeRoomId, setActiveRoomId } =
     useStore();
   const activeIndex = rooms.findIndex((r) => r.id === activeRoomId);
 
@@ -39,10 +38,23 @@ export function Controls() {
           onClick={undo}
           disabled={history.length === 0}
           className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
-          aria-label="Undo last action"
+          aria-label={
+            history.length > 1
+              ? `Undo last action, ${history.length} available`
+              : 'Undo last action'
+          }
         >
           <Undo2 size={16} />
           <span className="hidden sm:inline">Undo</span>
+          {/* Undo steps back through the whole session, so say how far it reaches. */}
+          {history.length > 1 && (
+            <span
+              aria-hidden="true"
+              className="text-[10px] tabular-nums leading-none px-1.5 py-0.5 rounded-full bg-foreground/8 text-muted-foreground"
+            >
+              {history.length}
+            </span>
+          )}
         </button>
 
         <div className="w-px h-4 bg-border mx-1 md:mx-2" />

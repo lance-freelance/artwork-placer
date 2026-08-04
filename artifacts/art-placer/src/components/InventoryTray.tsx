@@ -1,9 +1,10 @@
 import { useRef } from 'react';
-import { artObjects } from '../data/objects';
+import { useStore } from '../state/Store';
 import { TrayItem } from './TrayItem';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function InventoryTray() {
+  const { artObjects } = useStore();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const scrollBy = (amount: number) => {

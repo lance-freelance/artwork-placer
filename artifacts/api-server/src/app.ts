@@ -26,6 +26,11 @@ app.use(
   }),
 );
 app.use(cors());
+// An art upload carries a base64 image, so it needs a far larger body than the
+// small metadata documents every other route exchanges. It is mounted first
+// and only for that path; the general parser below then sees the body as
+// already read and leaves it alone.
+app.use("/api/media/art", express.json({ limit: "20mb" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

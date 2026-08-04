@@ -1,13 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { useStore } from '../state/Store';
-import { rooms } from '../data/rooms';
 import { ArtObject } from './ArtObject';
 import { cn } from '@/lib/utils';
 import { assetUrl } from '../types';
 import { PlacementBand } from './PlacementBand';
 
 export function RoomCanvas({ roomId, isActive }: { roomId: string, isActive: boolean }) {
-  const { setRoomWidth, canvasElRef, placements } = useStore();
+  const { rooms, artObjects, setRoomWidth, canvasElRef, placements } = useStore();
 
   const room = rooms.find(r => r.id === roomId)!;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -34,7 +33,12 @@ export function RoomCanvas({ roomId, isActive }: { roomId: string, isActive: boo
     return () => observer.disconnect();
   }, [isActive, setRoomWidth]);
 
-  const roomPlacements = placements.filter(p => p.roomId === roomId);
+  // The store reconciles the catalog after it changes, but that happens one
+  // commit later — a piece deleted in the admin panel must not be rendered in
+  // the render in between, because the lookup below it would come back empty.
+  const roomPlacements = placements.filter(
+    p => p.roomId === roomId && artObjects.some(o => o.id === p.objectId),
+  );
 
   return (
     <div 

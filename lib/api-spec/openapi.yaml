@@ -10,6 +10,12 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: catalog
+    description: Rooms and art objects managed through the admin panel
+  - name: placements
+    description: Where art objects sit inside rooms
+  - name: media
+    description: Image files present on disk
 paths:
   /healthz:
     get:
@@ -24,6 +30,288 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /media:
+    get:
+      operationId: listMedia
+      tags: [media]
+      summary: Image files available on disk
+      description: >
+        Filenames present in the app's public image directories. Images are
+        managed by hand through the file browser, so this is read directly
+        from the filesystem on every request and needs no code change when a
+        file is added.
+      responses:
+        "200":
+          description: Available image filenames
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MediaLibrary"
+
+  /media/art:
+    post:
+      operationId: uploadArtImage
+      tags: [media]
+      summary: Save an art image and its thumbnail
+      description: >
+        Writes one art image and the thumbnail generated from it into the
+        public art directory. The admin panel provides a single file: it scales
+        the image down in a canvas and sends both, so there is no image
+        processing on the server and no separate thumbnail to manage. The
+        server owns the filenames, so the base name is a suggestion that is
+        slugified and made unique before anything is written.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArtImageUpload"
+      responses:
+        "201":
+          description: The filenames the images were written under
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtImageFiles"
+        "400":
+          description: The upload was malformed or too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /rooms:
+    get:
+      operationId: listRooms
+      tags: [catalog]
+      summary: List rooms
+      responses:
+        "200":
+          description: Rooms in display order
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Room"
+    post:
+      operationId: createRoom
+      tags: [catalog]
+      summary: Create a room
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoomInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /rooms/{roomId}:
+    patch:
+      operationId: updateRoom
+      tags: [catalog]
+      summary: Update a room
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoomUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Room"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: No such room
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteRoom
+      tags: [catalog]
+      summary: Delete a room and every placement inside it
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: No such room
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /art:
+    get:
+      operationId: listArt
+      tags: [catalog]
+      summary: List art objects
+      responses:
+        "200":
+          description: The inventory
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ArtObject"
+    post:
+      operationId: createArt
+      tags: [catalog]
+      summary: Create an art object
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArtInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtObject"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /art/{artId}:
+    patch:
+      operationId: updateArt
+      tags: [catalog]
+      summary: Update an art object
+      parameters:
+        - name: artId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArtUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArtObject"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: No such art object
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteArt
+      tags: [catalog]
+      summary: Delete an art object and every placement of it
+      parameters:
+        - name: artId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: No such art object
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /placements:
+    get:
+      operationId: listPlacements
+      tags: [placements]
+      summary: Every placement across every room
+      responses:
+        "200":
+          description: Placements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Placement"
+    put:
+      operationId: replacePlacements
+      tags: [placements]
+      summary: Replace the whole set of placements
+      description: >
+        The felt board owns the full set in memory (it supports undo and
+        reset), so it writes the whole set back rather than diffing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PlacementSet"
+      responses:
+        "200":
+          description: The stored placements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Placement"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +322,260 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    MediaLibrary:
+      type: object
+      properties:
+        rooms:
+          description: Filenames in the public rooms directory
+          type: array
+          items:
+            type: string
+        art:
+          description: Filenames in the public art directory
+          type: array
+          items:
+            type: string
+      required:
+        - rooms
+        - art
+
+    ArtImageUpload:
+      type: object
+      properties:
+        baseName:
+          description: >
+            Suggested file stem, usually slugified from the piece's name. The
+            server sanitises it and appends a suffix if the name is taken, so
+            it can never escape the art directory or overwrite an existing
+            image.
+          type: string
+          minLength: 1
+        fullImage:
+          description: Data URL of the image as uploaded, at its original size
+          type: string
+        thumbnail:
+          description: Data URL of the tray-sized image generated from it
+          type: string
+      required:
+        - baseName
+        - fullImage
+        - thumbnail
+
+    ArtImageFiles:
+      type: object
+      properties:
+        fullImageFilename:
+          type: string
+        thumbnailFilename:
+          type: string
+      required:
+        - fullImageFilename
+        - thumbnailFilename
+
+    Room:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        imageFilename:
+          description: A file in the public rooms directory. 1600x1000px, 16:10.
+          type: string
+        bandSplit:
+          description: >
+            Percentage of canvas height. Wall art may only be placed above it,
+            sculptures only below it.
+          type: number
+          minimum: 1
+          maximum: 99
+      required:
+        - id
+        - name
+        - imageFilename
+        - bandSplit
+
+    RoomInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        imageFilename:
+          type: string
+          minLength: 1
+        bandSplit:
+          type: number
+          minimum: 1
+          maximum: 99
+      required:
+        - name
+        - imageFilename
+        - bandSplit
+
+    RoomUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        imageFilename:
+          type: string
+          minLength: 1
+        bandSplit:
+          type: number
+          minimum: 1
+          maximum: 99
+
+    ArtObject:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/ObjectType"
+        thumbnailFilename:
+          type: string
+        fullImageFilename:
+          type: string
+        aspectRatio:
+          description: width / height
+          type: number
+          exclusiveMinimum: 0
+        defaultScale:
+          description: Fraction of the room canvas width the piece occupies
+          type: number
+          exclusiveMinimum: 0
+          maximum: 1
+        minScale:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 1
+        maxScale:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 1
+      required:
+        - id
+        - name
+        - type
+        - thumbnailFilename
+        - fullImageFilename
+        - aspectRatio
+        - defaultScale
+        - minScale
+        - maxScale
+
+    ObjectType:
+      type: string
+      enum:
+        - wall
+        - sculpture
+
+    ArtInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        type:
+          $ref: "#/components/schemas/ObjectType"
+        thumbnailFilename:
+          type: string
+          minLength: 1
+        fullImageFilename:
+          type: string
+          minLength: 1
+        aspectRatio:
+          type: number
+          exclusiveMinimum: 0
+        defaultScale:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 1
+        minScale:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 1
+        maxScale:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 1
+      required:
+        - name
+        - type
+        - thumbnailFilename
+        - fullImageFilename
+        - aspectRatio
+        - defaultScale
+        - minScale
+        - maxScale
+
+    ArtUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        type:
+          $ref: "#/components/schemas/ObjectType"
+        thumbnailFilename:
+          type: string
+          minLength: 1
+        fullImageFilename:
+          type: string
+          minLength: 1
+        aspectRatio:
+          type: number
+          exclusiveMinimum: 0
+        defaultScale:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 1
+        minScale:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 1
+        maxScale:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 1
+
+    Placement:
+      type: object
+      properties:
+        objectId:
+          type: string
+        roomId:
+          type: string
+        x:
+          description: Percentage of canvas width, 0-100
+          type: number
+        y:
+          description: Percentage of canvas height, 0-100
+          type: number
+        scale:
+          type: number
+          exclusiveMinimum: 0
+          maximum: 1
+      required:
+        - objectId
+        - roomId
+        - x
+        - y
+        - scale
+
+    PlacementSet:
+      type: array
+      items:
+        $ref: "#/components/schemas/Placement"

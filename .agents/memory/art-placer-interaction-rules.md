@@ -41,6 +41,14 @@ Rooms change only through the prev/next controls and the room dots. A swipeable/
 
 **How to apply:** never re-enable carousel dragging, and be wary of any library that grabs pointer events on a container that also hosts draggable children.
 
+## Undo must travel to the room the action happened in
+
+Undoing an action performed in another room takes the board to that room, so the change is visible.
+
+**Why:** only one room is on screen at a time. Otherwise undo silently alters a room the user cannot see and reads as a broken button.
+
+**How to apply:** every reversible action has to carry which room it touched. Anything that spans rooms is undone from where the user was standing. Two traps: the recorded room may have been deleted by the time undo runs, and a snapshot valid when taken may hold placements that a later band-split change has invalidated — re-check both at the moment undo fires, not only when the catalog changes.
+
 ## Object sizing is calibrated to the room photographs
 
 Scales are a fraction of canvas width, judged against the furniture in the photos: a full canvas width reads as roughly 4.2m of room, so 1m ≈ 0.24 of canvas width. Guessing scales without checking them rendered in a room produces art that reads far too large.

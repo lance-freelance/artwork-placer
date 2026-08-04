@@ -1,52 +1,17 @@
 /**
  * Domain types for the felt-board art placement experience.
  *
- * These shapes are deliberately identical to how the data will be read from a
- * persistence layer in Phase 2 — nothing here depends on where the data came
- * from, so the hardcoded data modules in `src/data/` can be swapped for a
- * fetch/query layer without touching any component.
+ * The shapes are owned by the OpenAPI contract and generated from it, so the
+ * board, the admin panel and the server can never drift apart. Everything is
+ * read from the API at runtime — nothing here is hardcoded content.
  */
 
-export type ObjectType = 'wall' | 'sculpture';
-
-/** A room the user can place objects into. */
-export interface Room {
-  id: string;
-  name: string;
-  /** References `/public/rooms/<file>` — 1600x1000px, 16:10. */
-  imageFilename: string;
-  /** 0–100, % of canvas height. Wall art above, sculptures below. */
-  bandSplit: number;
-}
-
-/** A framed artwork or sculpture available in the inventory. */
-export interface ArtObject {
-  id: string;
-  name: string;
-  type: ObjectType;
-  /** References `/public/art/<file>`. */
-  thumbnailFilename: string;
-  /** References `/public/art/<file>`. */
-  fullImageFilename: string;
-  /** width / height */
-  aspectRatio: number;
-  defaultScale: number;
-  minScale: number;
-  maxScale: number;
-}
-
-/**
- * A single placed object. `x` and `y` are percentages (0–100) of the room
- * canvas so placements stay correct across viewport sizes and orientations.
- */
-export interface Placement {
-  objectId: string;
-  roomId: string;
-  x: number;
-  y: number;
-  scale: number;
-  band: ObjectType;
-}
+export type {
+  ArtObject,
+  ObjectType,
+  Placement,
+  Room,
+} from '@workspace/api-client-react';
 
 /**
  * Resolve a `/public` asset path against the artifact's base URL.

@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { seedIfEmpty } from "./lib/catalog";
 
 const rawPort = process.env["PORT"];
 
@@ -13,6 +14,14 @@ const port = Number(rawPort);
 
 if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
+}
+
+// Awaited before the first request, so no client can read the empty catalog
+// that exists for the moment before seeding lands and then hold that state.
+try {
+  await seedIfEmpty();
+} catch (err) {
+  logger.error({ err }, "Could not seed the catalog");
 }
 
 app.listen(port, (err) => {

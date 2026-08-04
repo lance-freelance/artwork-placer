@@ -1,8 +1,6 @@
 import { useRef } from 'react';
 import { X } from 'lucide-react';
 import { useStore } from '../state/Store';
-import { artObjects } from '../data/objects';
-import { rooms } from '../data/rooms';
 import { usePointerDrag } from '../hooks/usePointerDrag';
 import { cn } from '@/lib/utils';
 import { resolveDrop, type DragGeometry } from '@/lib/placement';
@@ -21,6 +19,8 @@ export function ArtObject({ placement }: { placement: Placement }) {
     canvasElRef,
     placeObject,
     removePlacement,
+    rooms,
+    artObjects,
   } = useStore();
   const obj = artObjects.find((o) => o.id === placement.objectId)!;
   const room = rooms.find((r) => r.id === placement.roomId)!;

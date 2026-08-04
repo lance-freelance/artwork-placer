@@ -1,9 +1,8 @@
 import { useStore } from '../state/Store';
-import { rooms } from '../data/rooms';
 import { cn } from '@/lib/utils';
 
 export function RoomIndicator() {
-  const { activeRoomId, setActiveRoomId, placements } = useStore();
+  const { rooms, activeRoomId, setActiveRoomId, placements } = useStore();
 
   return (
     <div className="flex gap-2 justify-center py-2 shrink-0">

@@ -6,7 +6,6 @@ import { Controls } from './Controls';
 import { RoomIndicator } from './RoomIndicator';
 import { InstructionOverlay } from './InstructionOverlay';
 import { useStore } from '../state/Store';
-import { artObjects } from '../data/objects';
 import { assetUrl } from '../types';
 
 /**
@@ -14,7 +13,7 @@ import { assetUrl } from '../types';
  * the tray into the room canvas without being clipped by either.
  */
 function GlobalDragLayer() {
-  const { dragState } = useStore();
+  const { dragState, artObjects } = useStore();
   if (!dragState) return null;
   const obj = artObjects.find((o) => o.id === dragState.objectId);
   if (!obj) return null;

@@ -1,7 +1,5 @@
 import { useRef } from 'react';
 import { useStore } from '../state/Store';
-import { artObjects } from '../data/objects';
-import { rooms } from '../data/rooms';
 import { usePointerDrag } from '../hooks/usePointerDrag';
 import { cn } from '@/lib/utils';
 import { resolveDrop, type DragGeometry } from '@/lib/placement';
@@ -22,6 +20,8 @@ export function TrayItem({ objectId }: { objectId: string }) {
     placeObject,
     canvasElRef,
     activeRoomId,
+    rooms,
+    artObjects,
   } = useStore();
   const obj = artObjects.find((o) => o.id === objectId)!;
   const activeRoom = rooms.find((r) => r.id === activeRoomId);

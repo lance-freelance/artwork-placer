@@ -117,7 +117,6 @@ export function resolveDrop({
       x,
       y,
       scale: object.defaultScale,
-      band: object.type,
     },
   };
 }

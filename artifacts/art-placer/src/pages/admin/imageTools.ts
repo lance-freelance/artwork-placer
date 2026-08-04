@@ -1,0 +1,90 @@
+/**
+ * Everything the admin panel needs to turn one uploaded file into the pair of
+ * images an art record points at.
+ *
+ * The scaling happens here, in a canvas, rather than on the server: it keeps
+ * the API to plain JSON and means no image-processing dependency has to be
+ * installed or kept current.
+ */
+
+/** Longest edge of a tray thumbnail, in pixels. */
+export const THUMBNAIL_MAX_EDGE = 360;
+
+/** Reads a picked file as a `data:` URL, which is what the API accepts. */
+export function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error('That file could not be read.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+/** Decodes a URL into an image, so its real dimensions can be measured. */
+export function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('That image could not be decoded.'));
+    img.src = src;
+  });
+}
+
+/**
+ * Draws the image into an off-screen canvas at tray size.
+ *
+ * WebP is asked for because the artwork is transparent — a JPEG would fill the
+ * cut-out with black — and it is a fraction of the size of a PNG. A browser
+ * that cannot encode WebP returns a PNG data URL instead of failing, and the
+ * server reads the actual type back out of the URL, so either is fine.
+ */
+export function generateThumbnail(
+  image: HTMLImageElement,
+  maxEdge = THUMBNAIL_MAX_EDGE,
+): string {
+  const longest = Math.max(image.naturalWidth, image.naturalHeight);
+  const scale = Math.min(1, maxEdge / longest);
+  const width = Math.max(1, Math.round(image.naturalWidth * scale));
+  const height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('This browser could not open a drawing canvas.');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(image, 0, 0, width, height);
+
+  return canvas.toDataURL('image/webp', 0.86);
+}
+
+/** `Ink Study (Oversized).png` becomes `ink-study-oversized`. */
+export function fileStem(filename: string): string {
+  return filename.replace(/\.[^.]+$/, '');
+}
+
+/**
+ * The thumbnail that belongs to an image already sitting in the art directory.
+ *
+ * Uploads always write the two together, but the shipped collection was put
+ * there by hand, so the sibling is looked up by convention rather than assumed.
+ * With no sibling the full image stands in for itself — heavier in the tray,
+ * but never a broken picture.
+ */
+export function findThumbnailFor(
+  fullImageFilename: string,
+  available: string[],
+): string {
+  const stem = fileStem(fullImageFilename);
+  return (
+    available.find((name) => fileStem(name) === `${stem}-thumb`) ??
+    fullImageFilename
+  );
+}
+
+/** Whether a filename is a thumbnail, and so not offered as an artwork. */
+export function isThumbnail(filename: string): boolean {
+  return fileStem(filename).endsWith('-thumb');
+}
