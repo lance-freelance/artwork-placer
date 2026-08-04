@@ -31,8 +31,10 @@ export function TrayItem({ objectId }: { objectId: string }) {
   const isSelected = selectedObjectId === objectId;
 
   const { dragging, handlers } = usePointerDrag({
-    // Horizontal swipes still scroll the tray; pulling upward lifts the piece.
-    touchAction: 'pan-x',
+    // touch-action defaults to 'none' here, so the browser never contests the
+    // contact as a tray scroll — every touch is unambiguously a potential drag
+    // from the moment it starts. Horizontal tray browsing is handled exclusively
+    // by the chevron buttons in InventoryTray.
     onDragStart: (p) => {
       setSelectedObjectId(null);
       const width = roomWidth * obj.defaultScale;

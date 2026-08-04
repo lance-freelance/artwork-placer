@@ -120,3 +120,49 @@ export function resolveDrop({
     },
   };
 }
+
+/**
+ * Where a *tap* from the select-then-place flow lands.
+ *
+ * Separate from `resolveDrop` because a tap carries no grab geometry — the
+ * anchor is the tap point itself, not the centre of a piece already under the
+ * pointer — but it shares `isValidBand` and `clampToCanvas` with it so the two
+ * entry points into placement cannot drift apart.
+ *
+ * Called from both the placement band and from a tap that lands on a piece
+ * already in the room, so an occupied spot is not a dead zone.
+ */
+export function resolveTapPlace({
+  canvasEl,
+  room,
+  object,
+  clientX,
+  clientY,
+}: {
+  canvasEl: HTMLElement | null;
+  room: Room;
+  object: ArtObjectData;
+  /** Tap position. */
+  clientX: number;
+  clientY: number;
+}): DropResolution {
+  if (!canvasEl) return { action: 'none' };
+  const rect = canvasEl.getBoundingClientRect();
+
+  const pctX = ((clientX - rect.left) / rect.width) * 100;
+  const pctY = ((clientY - rect.top) / rect.height) * 100;
+
+  if (!isValidBand(object.type, pctY, room.bandSplit)) return { action: 'none' };
+
+  const { x, y } = clampToCanvas(pctX, pctY);
+  return {
+    action: 'place',
+    placement: {
+      objectId: object.id,
+      roomId: room.id,
+      x,
+      y,
+      scale: object.defaultScale,
+    },
+  };
+}

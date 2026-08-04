@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../state/Store';
 import { Room } from '../types';
 import { cn } from '@/lib/utils';
-import { clampToCanvas, isValidBand } from '@/lib/placement';
+import { isValidBand, resolveTapPlace } from '@/lib/placement';
 
 export function PlacementBand({ room, canvasRef }: { room: Room, canvasRef: React.RefObject<HTMLDivElement | null> }) {
   const { dragState, selectedObjectId, placeObject, setSelectedObjectId, artObjects } = useStore();
@@ -41,24 +41,20 @@ export function PlacementBand({ room, canvasRef }: { room: Room, canvasRef: Reac
   }, [dragState, canvasRef, activeObject, room.bandSplit]);
 
   const handleTapPlace = (e: React.MouseEvent, type: 'wall' | 'sculpture') => {
-    if (!selectedObjectId || !canvasRef.current) return;
-    const obj = artObjects.find(o => o.id === selectedObjectId)!;
-    if (obj.type !== type) return;
+    if (!selectedObjectId) return;
+    const obj = artObjects.find(o => o.id === selectedObjectId);
+    if (!obj || obj.type !== type) return;
 
-    const rect = canvasRef.current.getBoundingClientRect();
-    // Center it on the click
-    const { x, y } = clampToCanvas(
-      ((e.clientX - rect.left) / rect.width) * 100,
-      ((e.clientY - rect.top) / rect.height) * 100,
-    );
-
-    placeObject({
-      objectId: obj.id,
-      roomId: room.id,
-      x,
-      y,
-      scale: obj.defaultScale,
+    const result = resolveTapPlace({
+      canvasEl: canvasRef.current,
+      room,
+      object: obj,
+      clientX: e.clientX,
+      clientY: e.clientY,
     });
+    if (result.action !== 'place') return;
+
+    placeObject(result.placement);
     setSelectedObjectId(null);
   };
 

@@ -24,9 +24,9 @@ type DragCallbacks = {
   /**
    * How the browser is allowed to handle the gesture natively *before* the
    * drag threshold is crossed.
-   * - `'none'` for objects already placed in a room: we own the gesture.
-   * - `'pan-x'` for tray thumbnails: horizontal swipes still scroll the tray,
-   *   while pulling a piece out of the tray comes through as pointer moves.
+   * - `'none'` (default): we own the contact from the very first pixel of
+   *   movement. Use this for all draggable elements, including tray thumbnails,
+   *   where unambiguous ownership matters more than native scroll behaviour.
    *
    * Once the threshold is crossed this is forced to `'none'` — see
    * `gestureLocked` below.

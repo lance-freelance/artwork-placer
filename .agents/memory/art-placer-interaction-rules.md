@@ -41,6 +41,22 @@ Rooms change only through the prev/next controls and the room dots. A swipeable/
 
 **How to apply:** never re-enable carousel dragging, and be wary of any library that grabs pointer events on a container that also hosts draggable children.
 
+## A full-canvas tap target must never sit above the placed pieces
+
+The select-then-place flow covers the whole canvas with an interactive overlay while something is
+selected. That overlay must stay *below* the placed artwork in stacking order, or it swallows every
+press on a placed piece — repositioning and the per-piece remove control both silently stop working
+while a tray item is selected, and nothing about the UI explains why.
+
+**Why:** reported as "art won't move once placed". It does not reproduce with a mouse in the obvious
+way, because it needs the prior state of having tapped a tray thumbnail first — the tester only found
+it by hit-testing `document.elementFromPoint` over the artwork and seeing the overlay button come back.
+
+**How to apply:** raising the pieces above the overlay is the fix, but it makes an occupied spot a dead
+zone for tap-to-place, so the piece has to forward a plain tap to the same placement call the overlay
+uses. Keep that call one shared function rather than two copies of the maths. When debugging "the click
+lands on the right element but nothing happens", hit-test the point before re-reading the handler.
+
 ## Undo must travel to the room the action happened in
 
 Undoing an action performed in another room takes the board to that room, so the change is visible.

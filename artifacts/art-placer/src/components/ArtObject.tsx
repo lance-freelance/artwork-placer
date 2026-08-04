@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { useStore } from '../state/Store';
 import { usePointerDrag } from '../hooks/usePointerDrag';
 import { cn } from '@/lib/utils';
-import { resolveDrop, type DragGeometry } from '@/lib/placement';
+import { resolveDrop, resolveTapPlace, type DragGeometry } from '@/lib/placement';
 import { artImageUrl, type Placement } from '../types';
 
 /**
@@ -21,6 +21,8 @@ export function ArtObject({ placement }: { placement: Placement }) {
     removePlacement,
     rooms,
     artObjects,
+    selectedObjectId,
+    setSelectedObjectId,
   } = useStore();
   const obj = artObjects.find((o) => o.id === placement.objectId)!;
   const room = rooms.find((r) => r.id === placement.roomId)!;
@@ -31,7 +33,7 @@ export function ArtObject({ placement }: { placement: Placement }) {
   // the drag-start render, and the drop must not silently do nothing.
   const grab = useRef<DragGeometry | null>(null);
 
-  const { handlers } = usePointerDrag({
+  const { dragging, handlers } = usePointerDrag({
     onDragStart: (p) => {
       const rect = p.currentTarget.getBoundingClientRect();
       const geometry: DragGeometry = {
@@ -85,10 +87,34 @@ export function ArtObject({ placement }: { placement: Placement }) {
   return (
     <div
       {...handlers}
+      // z-20 puts the piece above PlacementBand's z-10 overlay. That overlay
+      // turns pointer-events-auto whenever a tray item is selected, and while
+      // it sat on top it swallowed every press on an already-placed piece —
+      // repositioning and the remove button both silently did nothing.
       className={cn(
-        'absolute cursor-grab touch-none active:cursor-grabbing group',
+        'absolute z-20 cursor-grab touch-none active:cursor-grabbing group',
         isDragging && 'opacity-0',
       )}
+      // The band underneath is the tap target for select-then-place, so a tap
+      // landing on an existing piece has to place the selected one too —
+      // otherwise raising this element above it turns every occupied spot into
+      // a dead zone that fails silently.
+      onClick={(e) => {
+        if (dragging()) return;
+        if (!selectedObjectId || selectedObjectId === placement.objectId) return;
+        const selected = artObjects.find((o) => o.id === selectedObjectId);
+        if (!selected) return;
+        const result = resolveTapPlace({
+          canvasEl: canvasElRef.current,
+          room,
+          object: selected,
+          clientX: e.clientX,
+          clientY: e.clientY,
+        });
+        if (result.action !== 'place') return;
+        placeObject(result.placement);
+        setSelectedObjectId(null);
+      }}
       style={{
         left: `${placement.x}%`,
         top: `${placement.y}%`,
