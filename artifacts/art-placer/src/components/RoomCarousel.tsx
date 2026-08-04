@@ -36,16 +36,6 @@ export function RoomCarousel() {
 
   return (
     <div className="relative w-full h-full">
-      {/* Left room-nav arrow — overlaid on the canvas, below the action controls */}
-      <button
-        className={`${sideArrowClass} left-4`}
-        disabled={activeIndex === 0}
-        onClick={() => setActiveRoomId(rooms[activeIndex - 1].id)}
-        aria-label="Previous room"
-      >
-        <ChevronLeft size={20} className="text-foreground" />
-      </button>
-
       {/* Embla viewport — fills entire parent */}
       <div className="overflow-hidden w-full h-full" ref={emblaRef}>
         <div className="flex h-full touch-pan-y">
