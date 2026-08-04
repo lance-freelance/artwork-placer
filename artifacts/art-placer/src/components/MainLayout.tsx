@@ -42,15 +42,13 @@ export function MainLayout() {
   return (
     <div className="h-[100dvh] w-full relative overflow-hidden bg-black">
       <GlobalDragLayer />
-
       {/* Room canvas fills the entire viewport */}
       <div className="absolute inset-0">
         <RoomCarousel />
       </div>
-
       {/* ── Top bar: compact room pill and logo in one centred group ── */}
       <div className="absolute top-0 left-0 right-0 z-20 flex justify-center px-4 pt-4 pointer-events-none">
-        <div className="pointer-events-auto flex items-center gap-3">
+        <div className="pointer-events-auto flex items-center gap-3 ml-[0px] mr-[0px] mt-[20px] mb-[20px]">
           <RoomTabs />
           <img
             src={assetUrl('l3-white-horizontal-logo.png')}
@@ -60,7 +58,6 @@ export function MainLayout() {
           />
         </div>
       </div>
-
       {/* Subtle left-edge gradient so controls read against any room photo */}
       <div
         className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
@@ -71,10 +68,8 @@ export function MainLayout() {
         className="absolute top-0 left-0 right-0 h-24 z-10 pointer-events-none"
         style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.22) 0%, transparent 100%)' }}
       />
-
       {/* ── Left floating controls: Undo + Clear room ── */}
       <Controls />
-
       {/* ── Bottom: first-use hint + inventory tray — 2/3 window width, centred ── */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex flex-col gap-2 w-2/3">
         <InstructionOverlay />
