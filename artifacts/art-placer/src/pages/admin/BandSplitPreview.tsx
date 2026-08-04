@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { assetUrl } from '@/types';
+import { roomImageUrl } from '@/types';
 
 interface BandSplitPreviewProps {
   imageFilename: string | undefined;
@@ -56,7 +56,7 @@ export function BandSplitPreview({ imageFilename, bandSplit, onChange }: BandSpl
       >
         {imageFilename ? (
           <img 
-            src={assetUrl(`rooms/${imageFilename}`)} 
+            src={roomImageUrl(imageFilename)} 
             className="w-full h-full object-cover pointer-events-none" 
             alt="Room preview" 
           />

@@ -45,26 +45,16 @@ import {
 } from '@/components/ui/select';
 import { ImageOff, Loader2, Upload, Wand2 } from 'lucide-react';
 import { artImageUrl } from '@/types';
-import { Badge } from '@/components/ui/badge';
+import { aspectRatioOf } from '@/lib/sizing';
 
 const artSchema = z.object({
   name: z.string().min(1, "Name is required"),
   type: z.enum(["wall", "sculpture"]),
   thumbnailFilename: z.string().min(1, "Thumbnail is required"),
   fullImageFilename: z.string().min(1, "Full image is required"),
-  aspectRatio: z.coerce.number().positive("Must be > 0"),
-  minScale: z.coerce.number().min(0.01).max(1),
-  defaultScale: z.coerce.number().min(0.01).max(1),
-  maxScale: z.coerce.number().min(0.01).max(1),
-}).refine(data => data.minScale <= data.defaultScale, {
-  message: "Min scale must be <= default scale",
-  path: ["minScale"]
-}).refine(data => data.defaultScale <= data.maxScale, {
-  message: "Default scale must be <= max scale",
-  path: ["defaultScale"]
-}).refine(data => data.minScale <= data.maxScale, {
-  message: "Min scale must be <= max scale",
-  path: ["maxScale"]
+  realWidthInches: z.coerce.number().positive("Must be > 0"),
+  realHeightInches: z.coerce.number().positive("Must be > 0"),
+  resizeRangePercent: z.coerce.number().min(0).max(100),
 });
 
 type ArtFormValues = z.infer<typeof artSchema>;
@@ -79,7 +69,6 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { data: media, isLoading: isMediaLoading } = useListMedia();
-  const [autoDetectedRatio, setAutoDetectedRatio] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
   /**
@@ -116,10 +105,9 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
       type: art?.type ?? 'wall',
       thumbnailFilename: art?.thumbnailFilename ?? '',
       fullImageFilename: art?.fullImageFilename ?? '',
-      aspectRatio: art?.aspectRatio ?? 1,
-      minScale: art?.minScale ?? 0.05,
-      defaultScale: art?.defaultScale ?? 0.15,
-      maxScale: art?.maxScale ?? 0.4,
+      realWidthInches: art?.realWidthInches ?? 24,
+      realHeightInches: art?.realHeightInches ?? 36,
+      resizeRangePercent: art?.resizeRangePercent ?? 20,
     },
   });
 
@@ -139,24 +127,20 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
         type: art.type,
         thumbnailFilename: art.thumbnailFilename,
         fullImageFilename: art.fullImageFilename,
-        aspectRatio: art.aspectRatio,
-        minScale: art.minScale,
-        defaultScale: art.defaultScale,
-        maxScale: art.maxScale,
+        realWidthInches: art.realWidthInches,
+        realHeightInches: art.realHeightInches,
+        resizeRangePercent: art.resizeRangePercent,
       });
-      setAutoDetectedRatio(false);
     } else {
       form.reset({
         name: '',
         type: 'wall',
         thumbnailFilename: '',
         fullImageFilename: '',
-        aspectRatio: 1,
-        minScale: 0.05,
-        defaultScale: 0.15,
-        maxScale: 0.4,
+        realWidthInches: 24,
+        realHeightInches: 36,
+        resizeRangePercent: 20,
       });
-      setAutoDetectedRatio(false);
     }
   }, [art, form]);
 
@@ -199,23 +183,15 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
     }
   }
 
-  /** Shape is a property of the picture, so it is measured, never typed in. */
-  const applyAspectRatio = (image: HTMLImageElement) => {
-    const rounded = Math.round((image.naturalWidth / image.naturalHeight) * 100) / 100;
-    form.setValue('aspectRatio', rounded, { shouldValidate: true, shouldDirty: true });
-    setAutoDetectedRatio(true);
-    return rounded;
-  };
-
   const setImageFilenames = (fullImageFilename: string, thumbnailFilename: string) => {
     form.setValue('fullImageFilename', fullImageFilename, { shouldValidate: true, shouldDirty: true });
     form.setValue('thumbnailFilename', thumbnailFilename, { shouldValidate: true, shouldDirty: true });
   };
 
   /**
-   * One picked file becomes both images: it is measured for its aspect ratio,
-   * scaled down in a canvas for the tray, and the pair is sent to be written
-   * together. The thumbnail is never something the admin has to supply.
+   * One picked file becomes both images: it is scaled down in a canvas for
+   * the tray, and the pair is sent to be written together. The thumbnail is
+   * never something the admin has to supply.
    */
   const handleFileChosen = async (file: File) => {
     const op = ++imageOpRef.current;
@@ -229,7 +205,6 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
       const image = await loadImage(dataUrl);
       if (!current()) return;
 
-      const ratio = applyAspectRatio(image);
       const thumbnail = generateThumbnail(image);
 
       // Name the files after the piece where there is a name to use, so the
@@ -268,7 +243,7 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
       } else {
         toast({
           title: 'Image saved',
-          description: `Thumbnail generated at ${THUMBNAIL_MAX_EDGE}px · aspect ratio ${ratio}`,
+          description: `Thumbnail generated at ${THUMBNAIL_MAX_EDGE}px`,
         });
       }
     } catch (err: any) {
@@ -284,14 +259,9 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
   };
 
   /** Reuses a picture already in the art directory, thumbnail and all. */
-  const handleExistingImageChosen = async (filename: string) => {
+  const handleExistingImageChosen = (filename: string) => {
     setImageError(null);
     setImageFilenames(filename, findThumbnailFor(filename, media?.art ?? []));
-    try {
-      applyAspectRatio(await loadImage(artImageUrl(filename)));
-    } catch {
-      // Leave the ratio alone; it stays editable by hand.
-    }
   };
 
   const artImages = media?.art ?? [];
@@ -299,6 +269,18 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
   const selectableArtImages = artImages.filter((name) => !isThumbnail(name));
   const fullImageFilename = form.watch('fullImageFilename');
   const thumbnailFilename = form.watch('thumbnailFilename');
+
+  // Shape is read off the entered real dimensions rather than typed in, so it
+  // stays a display value that can never drift from width and height.
+  const widthInches = Number(form.watch('realWidthInches'));
+  const heightInches = Number(form.watch('realHeightInches'));
+  const aspectRatioDisplay =
+    widthInches > 0 && heightInches > 0
+      ? aspectRatioOf({
+          realWidthInches: widthInches,
+          realHeightInches: heightInches,
+        }).toFixed(2)
+      : '—';
 
   return (
     <Form {...form}>
@@ -369,8 +351,7 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
                 <Label>Artwork Image</Label>
                 <p className="text-sm text-muted-foreground mt-1">
                   Upload one image. The tray thumbnail is generated from it
-                  automatically at {THUMBNAIL_MAX_EDGE}px, and the aspect ratio is
-                  read off the file.
+                  automatically at {THUMBNAIL_MAX_EDGE}px.
                 </p>
               </div>
               <input
@@ -502,31 +483,21 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
 
           <div className="space-y-4 pt-2">
             <div className="flex items-center gap-2">
-              <h3 className="font-serif text-lg">Dimensions & Scale</h3>
+              <h3 className="font-serif text-lg">Physical Dimensions</h3>
               <div className="h-px bg-border flex-1 ml-4" />
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <FormField
                 control={form.control}
-                name="aspectRatio"
+                name="realWidthInches"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex items-center justify-between mb-2">
-                      <FormLabel className="mb-0">Aspect Ratio</FormLabel>
-                      {autoDetectedRatio && (
-                        <Badge variant="secondary" className="text-[10px] h-5 flex items-center gap-1 bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-                          <Wand2 className="w-3 h-3" /> Auto
-                        </Badge>
-                      )}
-                    </div>
+                    <FormLabel>Width (in)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} onChange={e => {
-                        field.onChange(e);
-                        setAutoDetectedRatio(false);
-                      }} />
+                      <Input type="number" step="0.1" {...field} />
                     </FormControl>
-                    <FormDescription>Width / height</FormDescription>
+                    <FormDescription>True width in inches</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -534,29 +505,14 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
 
               <FormField
                 control={form.control}
-                name="minScale"
+                name="realHeightInches"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Min Scale</FormLabel>
+                    <FormLabel>Height (in)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} />
+                      <Input type="number" step="0.1" {...field} />
                     </FormControl>
-                    <FormDescription>0 to 1</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="defaultScale"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Default Scale</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" {...field} />
-                    </FormControl>
-                    <FormDescription>0 to 1</FormDescription>
+                    <FormDescription>True height in inches</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -564,25 +520,46 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
 
               <FormField
                 control={form.control}
-                name="maxScale"
+                name="resizeRangePercent"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Max Scale</FormLabel>
+                    <FormLabel>Resize Range (%)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.01" {...field} />
+                      <Input type="number" step="1" {...field} />
                     </FormControl>
-                    <FormDescription>0 to 1</FormDescription>
+                    <FormDescription>0 to 100</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {/* Derived from width and height, so it is shown, never edited.
+                  Deliberately not a FormItem/FormLabel: those read form state
+                  through context and throw outside a FormField, and this
+                  display is backed by no field at all. */}
+              <div className="space-y-2">
+                <Label>Aspect Ratio</Label>
+                <div
+                  className="flex h-9 items-center rounded-md border border-input bg-muted/50 px-3 text-sm text-muted-foreground"
+                  data-testid="text-aspect-ratio"
+                >
+                  {aspectRatioDisplay}
+                </div>
+                <p className="text-[0.8rem] text-muted-foreground">Width / height</p>
+              </div>
             </div>
-            
+
             <div className="bg-muted/50 p-4 rounded-md text-sm text-muted-foreground border border-border/50">
-              <p>Scale values represent the fraction of the room canvas width the piece occupies.</p>
+              <p>
+                Enter the piece's <strong>true physical dimensions</strong> in
+                inches. Its size on a room canvas isn't set here — it's derived
+                from these measurements against each room's own wall-width
+                calibration, so the same artwork appears correctly scaled in
+                every room.
+              </p>
               <ul className="list-disc pl-5 mt-1 space-y-1">
-                <li>0.11 spans 11% of room width (approx. 50cm framed work)</li>
-                <li>0.20 spans 20% of room width (approx. 1.2m statement piece)</li>
+                <li>A 24" × 36" print reads at its real size relative to the wall it hangs on.</li>
+                <li>Resize Range sets how far a visitor may size it up or down: 20% allows 80%–120% of true size.</li>
               </ul>
             </div>
           </div>

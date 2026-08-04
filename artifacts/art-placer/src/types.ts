@@ -38,3 +38,16 @@ export function assetUrl(path: string): string {
 export function artImageUrl(filename: string): string {
   return `/api/art-image/${encodeURIComponent(filename)}`;
 }
+
+/**
+ * Resolve a room image filename to the API serving route.
+ *
+ * Rooms became uploadable, so they need exactly what art images needed: a
+ * route that reads uploads out of object storage and seeded photographs off
+ * the filesystem. Serving them as static `/public/rooms/...` assets instead
+ * would work in dev and then lose every uploaded room on the next publish,
+ * because the build output only ever contains the files committed to the repo.
+ */
+export function roomImageUrl(filename: string): string {
+  return `/api/room-image/${encodeURIComponent(filename)}`;
+}

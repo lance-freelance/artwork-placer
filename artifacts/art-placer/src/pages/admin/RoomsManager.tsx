@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/card';
 import { Plus, Trash2, Loader2, LayoutDashboard } from 'lucide-react';
 import { RoomForm } from './RoomForm';
 import { DeleteDialog } from './DeleteDialog';
-import { assetUrl } from '@/types';
+import { roomImageUrl } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 export function RoomsManager() {
@@ -85,7 +85,7 @@ export function RoomsManager() {
                 >
                   <div className="aspect-[16/10] bg-muted relative">
                     <img 
-                      src={assetUrl(`rooms/${room.imageFilename}`)} 
+                      src={roomImageUrl(room.imageFilename)} 
                       alt={room.name} 
                       className="w-full h-full object-cover"
                     />

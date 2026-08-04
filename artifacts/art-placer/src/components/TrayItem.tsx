@@ -3,6 +3,7 @@ import { useStore } from '../state/Store';
 import { usePointerDrag } from '../hooks/usePointerDrag';
 import { cn } from '@/lib/utils';
 import { resolveDrop, type DragGeometry } from '@/lib/placement';
+import { aspectRatioOf, scaleFor } from '@/lib/sizing';
 import { artImageUrl } from '../types';
 
 /**
@@ -37,8 +38,12 @@ export function TrayItem({ objectId }: { objectId: string }) {
     // by the chevron buttons in InventoryTray.
     onDragStart: (p) => {
       setSelectedObjectId(null);
-      const width = roomWidth * obj.defaultScale;
-      const height = width / obj.aspectRatio;
+      // No room, no geometry to size the ghost against. Leaving `grab` null
+      // also makes the matching onDragEnd a no-op, so the gesture is inert
+      // rather than half-live.
+      if (!activeRoom) return;
+      const width = roomWidth * scaleFor(obj, activeRoom);
+      const height = width / aspectRatioOf(obj);
       // Held in a ref rather than read back from dragState: a quick flick can
       // reach pointerup before React has committed the drag-start render.
       const geometry: DragGeometry = {
@@ -99,7 +104,7 @@ export function TrayItem({ objectId }: { objectId: string }) {
       className="relative shrink-0 cursor-grab active:cursor-grabbing rounded-sm transition-transform duration-200 outline-none hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ml-[14px] mr-[14px]"
       style={{
         height: 'clamp(56px, 9vh, 84px)',
-        aspectRatio: obj.aspectRatio,
+        aspectRatio: aspectRatioOf(obj),
         ...handlers.style,
       }}
       aria-pressed={isSelected}

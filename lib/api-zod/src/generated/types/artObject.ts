@@ -14,24 +14,19 @@ export interface ArtObject {
   thumbnailFilename: string;
   fullImageFilename: string;
   /**
-     * width / height
+     * True width of the physical piece, in inches, exactly as an art listing would state it. The on-canvas scale is derived from this against each room's own back-wall calibration, so it is never stored per room.
      * @exclusiveMinimum 0
      */
-  aspectRatio: number;
+  realWidthInches: number;
   /**
-     * Fraction of the room canvas width the piece occupies
-     * @maximum 1
+     * True height of the physical piece, in inches.
      * @exclusiveMinimum 0
      */
-  defaultScale: number;
+  realHeightInches: number;
   /**
-     * @maximum 1
-     * @exclusiveMinimum 0
+     * How far a visitor may size this piece up or down from its true-to-life size, as a percentage. 20 means a range of 80%-120%.
+     * @minimum 0
+     * @maximum 100
      */
-  minScale: number;
-  /**
-     * @maximum 1
-     * @exclusiveMinimum 0
-     */
-  maxScale: number;
+  resizeRangePercent: number;
 }

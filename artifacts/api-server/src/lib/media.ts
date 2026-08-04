@@ -23,8 +23,24 @@ const EXT_TO_MIME: Record<string, string> = {
   avif: "image/avif",
 };
 
-/** GCS object name prefix for uploaded art images. */
+/** GCS object name prefixes for uploaded images. */
 const ART_GCS_PREFIX = "art/";
+const ROOM_GCS_PREFIX = "rooms/";
+
+/**
+ * The two kinds of image the app stores. Each is a directory under `public/`
+ * for the seeded originals and a prefix in object storage for uploads, and
+ * both resolve the same way: object storage first, filesystem second. Room
+ * photographs went through this route too once they became uploadable —
+ * writing them into `public/rooms/` alone would lose every upload on the next
+ * publish, which is the exact failure the art route already exists to avoid.
+ */
+const MEDIA_KINDS = {
+  art: { dir: "art", prefix: ART_GCS_PREFIX },
+  rooms: { dir: "rooms", prefix: ROOM_GCS_PREFIX },
+} as const;
+
+export type MediaKind = keyof typeof MEDIA_KINDS;
 
 /**
  * Where the web app's static (seeded) images live. Resolved from this module
@@ -66,11 +82,11 @@ async function listImages(dir: string): Promise<string[]> {
   }
 }
 
-/** Lists uploaded art image filenames from object storage. */
-async function listGCSArt(): Promise<string[]> {
+/** Lists uploaded image filenames from object storage under one prefix. */
+async function listGCSImages(prefix: string): Promise<string[]> {
   try {
     const bucket = getBucket();
-    const [files] = await bucket.getFiles({ prefix: ART_GCS_PREFIX });
+    const [files] = await bucket.getFiles({ prefix });
     return files
       .map((f) => path.basename(f.name))
       .filter(
@@ -85,43 +101,42 @@ async function listGCSArt(): Promise<string[]> {
   }
 }
 
-export async function listMediaFiles(): Promise<{
-  rooms: string[];
-  art: string[];
-}> {
-  // Rooms: filesystem only — there is no upload route for rooms.
-  let rooms: string[] = [];
+/** Seeded filenames on disk for one media kind. */
+async function listFilesystemImages(kind: MediaKind): Promise<string[]> {
   for (const base of publicDirCandidates()) {
-    const list = await listImages(path.join(base, "rooms"));
-    if (list.length > 0) {
-      rooms = list;
-      break;
-    }
+    const list = await listImages(path.join(base, MEDIA_KINDS[kind].dir));
+    if (list.length > 0) return list;
   }
+  return [];
+}
 
-  // Art: filesystem (seeded originals) + object storage (uploaded).
-  let fsArt: string[] = [];
-  for (const base of publicDirCandidates()) {
-    const list = await listImages(path.join(base, "art"));
-    if (list.length > 0) {
-      fsArt = list;
-      break;
-    }
-  }
-  const gcsArt = await listGCSArt();
+/**
+ * Every filename available for one kind: the seeded originals on disk plus
+ * anything uploaded to object storage since.
+ */
+async function listKind(kind: MediaKind): Promise<string[]> {
+  const [fromDisk, fromStorage] = await Promise.all([
+    listFilesystemImages(kind),
+    listGCSImages(MEDIA_KINDS[kind].prefix),
+  ]);
 
-  // Merge, preserving filesystem order first, then new GCS names.
-  const seen = new Set<string>(fsArt);
-  const merged = [...fsArt];
-  for (const name of gcsArt) {
+  const merged = [...fromDisk];
+  const seen = new Set(fromDisk);
+  for (const name of fromStorage) {
     if (!seen.has(name)) {
       seen.add(name);
       merged.push(name);
     }
   }
-  merged.sort((a, b) => a.localeCompare(b));
+  return merged.sort((a, b) => a.localeCompare(b));
+}
 
-  return { rooms, art: merged };
+export async function listMediaFiles(): Promise<{
+  rooms: string[];
+  art: string[];
+}> {
+  const [rooms, art] = await Promise.all([listKind("rooms"), listKind("art")]);
+  return { rooms, art };
 }
 
 /* -------------------------------- streaming ------------------------------- */
@@ -133,19 +148,22 @@ export interface ArtImageStream {
 }
 
 /**
- * Resolves an art image filename to a readable stream.
+ * Resolves an image filename to a readable stream.
  *
  * Checks object storage first (uploaded images), then falls back to the
  * seeded files on the filesystem. Returns null when the file does not exist
  * in either location.
  */
-export async function streamArtImage(
+export async function streamImage(
+  kind: MediaKind,
   filename: string,
 ): Promise<ArtImageStream | null> {
+  const { dir, prefix } = MEDIA_KINDS[kind];
+
   // 1. Object storage — uploaded files live here.
   try {
     const bucket = getBucket();
-    const file = bucket.file(`${ART_GCS_PREFIX}${filename}`);
+    const file = bucket.file(`${prefix}${filename}`);
     const [exists] = await file.exists();
     if (exists) {
       const [metadata] = await file.getMetadata();
@@ -165,7 +183,7 @@ export async function streamArtImage(
   const mime = EXT_TO_MIME[ext] || "application/octet-stream";
 
   for (const base of publicDirCandidates()) {
-    const filepath = path.join(base, "art", filename);
+    const filepath = path.join(base, dir, filename);
     try {
       const info = await stat(filepath);
       if (info.isFile()) {
@@ -182,6 +200,12 @@ export async function streamArtImage(
 
   return null;
 }
+
+export const streamArtImage = (filename: string) =>
+  streamImage("art", filename);
+
+export const streamRoomImage = (filename: string) =>
+  streamImage("rooms", filename);
 
 /* ----------------------------- writing art -------------------------------- */
 
@@ -280,6 +304,58 @@ function safeStem(baseName: string): string {
 }
 
 /**
+ * Every filename already taken for one kind, across both locations, so the
+ * collision check covers seeded originals and previous uploads alike.
+ */
+async function takenNames(kind: MediaKind): Promise<Set<string>> {
+  const names = new Set<string>();
+
+  for (const base of publicDirCandidates()) {
+    const dir = path.join(base, MEDIA_KINDS[kind].dir);
+    const entries = await readdir(dir).catch(() => []);
+    for (const n of entries) names.add(n);
+    if (entries.length > 0) break;
+  }
+
+  try {
+    const bucket = getBucket();
+    const [files] = await bucket.getFiles({ prefix: MEDIA_KINDS[kind].prefix });
+    for (const f of files) names.add(path.basename(f.name));
+  } catch {
+    // If object storage is unavailable the check only covers the filesystem.
+  }
+
+  return names;
+}
+
+/**
+ * Writes one image to object storage — the copy the published app reads —
+ * then mirrors it onto the filesystem so the dev server can serve it straight
+ * away without going through the API route. Only the object-storage write is
+ * allowed to fail loudly; the local mirror is a convenience.
+ */
+async function writeImage(
+  kind: MediaKind,
+  filename: string,
+  file: { bytes: Buffer; mime: string },
+): Promise<void> {
+  const { dir, prefix } = MEDIA_KINDS[kind];
+
+  await getBucket()
+    .file(`${prefix}${filename}`)
+    .save(file.bytes, { contentType: file.mime, resumable: false });
+
+  try {
+    const target = path.join(publicDirCandidates()[0], dir);
+    await mkdir(target, { recursive: true });
+    const { writeFile } = await import("node:fs/promises");
+    await writeFile(path.join(target, filename), file.bytes);
+  } catch {
+    // Non-fatal: the object-storage copy is what counts in production.
+  }
+}
+
+/**
  * Saves an uploaded artwork and the thumbnail generated from it.
  *
  * Writes go to object storage so they survive deploys and are immediately
@@ -298,26 +374,7 @@ export async function saveArtImages(input: {
   const full = decodeDataUrl(input.fullImage, "The image");
   const thumb = decodeDataUrl(input.thumbnail, "The thumbnail");
 
-  // Build the set of names that already exist in EITHER location so the
-  // collision-avoidance logic covers both seeded files and prior uploads.
-  const existingNames = new Set<string>();
-
-  // Filesystem names (seeded originals).
-  for (const base of publicDirCandidates()) {
-    const dir = path.join(base, "art");
-    const names = await readdir(dir).catch(() => []);
-    for (const n of names) existingNames.add(n);
-    if (names.length > 0) break;
-  }
-
-  // GCS names (previous uploads).
-  try {
-    const bucket = getBucket();
-    const [gcsFiles] = await bucket.getFiles({ prefix: ART_GCS_PREFIX });
-    for (const f of gcsFiles) existingNames.add(path.basename(f.name));
-  } catch {
-    // If GCS is unavailable the collision check only covers the filesystem.
-  }
+  const existingNames = await takenNames("art");
 
   const wanted = safeStem(input.baseName);
   let stem = wanted;
@@ -333,33 +390,10 @@ export async function saveArtImages(input: {
   const fullImageFilename = `${stem}.${full.extension}`;
   const thumbnailFilename = `${stem}-thumb.${thumb.extension}`;
 
-  // Write to object storage — this is where the published app reads from.
-  const bucket = getBucket();
   await Promise.all([
-    bucket.file(`${ART_GCS_PREFIX}${fullImageFilename}`).save(full.bytes, {
-      contentType: full.mime,
-      resumable: false,
-    }),
-    bucket.file(`${ART_GCS_PREFIX}${thumbnailFilename}`).save(thumb.bytes, {
-      contentType: thumb.mime,
-      resumable: false,
-    }),
+    writeImage("art", fullImageFilename, full),
+    writeImage("art", thumbnailFilename, thumb),
   ]);
-
-  // Also write to the local filesystem so the dev Vite server can serve the
-  // file immediately without going through the API route. This is a
-  // convenience only — the GCS copy is the authoritative one.
-  try {
-    const dir = path.join(publicDirCandidates()[0], "art");
-    await mkdir(dir, { recursive: true });
-    const { writeFile } = await import("node:fs/promises");
-    await Promise.all([
-      writeFile(path.join(dir, fullImageFilename), full.bytes),
-      writeFile(path.join(dir, thumbnailFilename), thumb.bytes),
-    ]);
-  } catch {
-    // Non-fatal: the GCS copy is what counts in production.
-  }
 
   // A suffixed stem almost always means the same piece was uploaded twice.
   // The rename is reported so the client can say so, instead of a `-2` copy
@@ -369,6 +403,39 @@ export async function saveArtImages(input: {
     thumbnailFilename,
     ...(stem !== wanted
       ? { renamedFrom: `${wanted}.${full.extension}` }
+      : {}),
+  };
+}
+
+/**
+ * Saves an uploaded room photograph.
+ *
+ * The same path as an artwork minus the thumbnail: rooms are only ever shown
+ * at full canvas size, so there is no scaled copy to generate or keep in step.
+ */
+export async function saveRoomImage(input: {
+  baseName: string;
+  image: string;
+}): Promise<{ imageFilename: string; renamedFrom?: string }> {
+  const image = decodeDataUrl(input.image, "The image");
+
+  const existingNames = await takenNames("rooms");
+
+  const wanted = safeStem(input.baseName);
+  let stem = wanted;
+  let suffix = 2;
+  while (existingNames.has(`${stem}.${image.extension}`)) {
+    stem = `${wanted}-${suffix}`;
+    suffix += 1;
+  }
+
+  const imageFilename = `${stem}.${image.extension}`;
+  await writeImage("rooms", imageFilename, image);
+
+  return {
+    imageFilename,
+    ...(stem !== wanted
+      ? { renamedFrom: `${wanted}.${image.extension}` }
       : {}),
   };
 }

@@ -59,9 +59,40 @@ export const GetArtImageResponse = zod.unknown()
 
 
 /**
+ * Writes one room photograph into object storage, mirroring the art upload route. Rooms have no tray thumbnail, so a single image is sent and no scaled copy is generated. The server owns the filename, so the base name is a suggestion that is slugified and made unique before anything is written.
+ * @summary Save a room photograph
+ */
+
+
+
+export const UploadRoomImageBody = zod.object({
+  "baseName": zod.string().min(1).describe('Suggested file stem, usually slugified from the room\'s name. The server sanitises it and appends a suffix if the name is taken, so it can never escape the rooms directory or overwrite an existing image.\n'),
+  "image": zod.string().describe('Data URL of the room photograph as uploaded')
+})
+
+export const UploadRoomImageResponse = zod.object({
+  "imageFilename": zod.string(),
+  "renamedFrom": zod.string().optional().describe('Present when the requested name was already taken and the file was saved under a suffixed name instead.\n')
+})
+
+
+/**
+ * Returns the image bytes, checking object storage first (uploads) and the seeded filesystem copies second — the same resolution order as art images, and for the same reason: uploads must survive a publish, and the SPA's catch-all static route cannot 404 an absent file.
+ * @summary Serve a room image file
+ */
+export const GetRoomImageParams = zod.object({
+  "filename": zod.coerce.string()
+})
+
+export const GetRoomImageResponse = zod.unknown()
+
+
+/**
  * @summary List rooms
  */
 export const listRoomsResponseBandSplitMax = 99;
+
+export const listRoomsResponseWallWidthFeetExclusiveMin = 0;
 
 
 
@@ -69,7 +100,8 @@ export const ListRoomsResponseItem = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "imageFilename": zod.string().describe('A file in the public rooms directory. 1600x1000px, 16:10.'),
-  "bandSplit": zod.number().min(1).max(listRoomsResponseBandSplitMax).describe('Percentage of canvas height. Wall art may only be placed above it, sculptures only below it.\n')
+  "bandSplit": zod.number().min(1).max(listRoomsResponseBandSplitMax).describe('Percentage of canvas height. Wall art may only be placed above it, sculptures only below it.\n'),
+  "wallWidthFeet": zod.number().gt(listRoomsResponseWallWidthFeetExclusiveMin).describe('Real-world width, in decimal feet, of the BACK WALL spanned by the full canvas width — measured corner to corner exactly where that wall fills the frame. Deliberately not the room\'s footprint, its depth, or anything visible through an archway. Every placed piece is scaled against this number, so it is what lets one 48\" canvas read at the correct size in rooms photographed at different fields of view. Set by the calibration tool in the admin panel.\n')
 })
 export const ListRoomsResponse = zod.array(ListRoomsResponseItem)
 
@@ -81,15 +113,20 @@ export const ListRoomsResponse = zod.array(ListRoomsResponseItem)
 
 export const createRoomBodyBandSplitMax = 99;
 
+export const createRoomBodyWallWidthFeetExclusiveMin = 0;
+
 
 
 export const CreateRoomBody = zod.object({
   "name": zod.string().min(1),
   "imageFilename": zod.string().min(1),
-  "bandSplit": zod.number().min(1).max(createRoomBodyBandSplitMax)
+  "bandSplit": zod.number().min(1).max(createRoomBodyBandSplitMax),
+  "wallWidthFeet": zod.number().gt(createRoomBodyWallWidthFeetExclusiveMin).describe('Real-world back-wall width in decimal feet.')
 })
 
 export const createRoomResponseBandSplitMax = 99;
+
+export const createRoomResponseWallWidthFeetExclusiveMin = 0;
 
 
 
@@ -97,7 +134,8 @@ export const CreateRoomResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "imageFilename": zod.string().describe('A file in the public rooms directory. 1600x1000px, 16:10.'),
-  "bandSplit": zod.number().min(1).max(createRoomResponseBandSplitMax).describe('Percentage of canvas height. Wall art may only be placed above it, sculptures only below it.\n')
+  "bandSplit": zod.number().min(1).max(createRoomResponseBandSplitMax).describe('Percentage of canvas height. Wall art may only be placed above it, sculptures only below it.\n'),
+  "wallWidthFeet": zod.number().gt(createRoomResponseWallWidthFeetExclusiveMin).describe('Real-world width, in decimal feet, of the BACK WALL spanned by the full canvas width — measured corner to corner exactly where that wall fills the frame. Deliberately not the room\'s footprint, its depth, or anything visible through an archway. Every placed piece is scaled against this number, so it is what lets one 48\" canvas read at the correct size in rooms photographed at different fields of view. Set by the calibration tool in the admin panel.\n')
 })
 
 
@@ -112,15 +150,20 @@ export const UpdateRoomParams = zod.object({
 
 export const updateRoomBodyBandSplitMax = 99;
 
+export const updateRoomBodyWallWidthFeetExclusiveMin = 0;
+
 
 
 export const UpdateRoomBody = zod.object({
   "name": zod.string().min(1).optional(),
   "imageFilename": zod.string().min(1).optional(),
-  "bandSplit": zod.number().min(1).max(updateRoomBodyBandSplitMax).optional()
+  "bandSplit": zod.number().min(1).max(updateRoomBodyBandSplitMax).optional(),
+  "wallWidthFeet": zod.number().gt(updateRoomBodyWallWidthFeetExclusiveMin).optional()
 })
 
 export const updateRoomResponseBandSplitMax = 99;
+
+export const updateRoomResponseWallWidthFeetExclusiveMin = 0;
 
 
 
@@ -128,7 +171,8 @@ export const UpdateRoomResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
   "imageFilename": zod.string().describe('A file in the public rooms directory. 1600x1000px, 16:10.'),
-  "bandSplit": zod.number().min(1).max(updateRoomResponseBandSplitMax).describe('Percentage of canvas height. Wall art may only be placed above it, sculptures only below it.\n')
+  "bandSplit": zod.number().min(1).max(updateRoomResponseBandSplitMax).describe('Percentage of canvas height. Wall art may only be placed above it, sculptures only below it.\n'),
+  "wallWidthFeet": zod.number().gt(updateRoomResponseWallWidthFeetExclusiveMin).describe('Real-world width, in decimal feet, of the BACK WALL spanned by the full canvas width — measured corner to corner exactly where that wall fills the frame. Deliberately not the room\'s footprint, its depth, or anything visible through an archway. Every placed piece is scaled against this number, so it is what lets one 48\" canvas read at the correct size in rooms photographed at different fields of view. Set by the calibration tool in the admin panel.\n')
 })
 
 
@@ -145,16 +189,12 @@ export const DeleteRoomResponse = zod.void()
 /**
  * @summary List art objects
  */
-export const listArtResponseAspectRatioExclusiveMin = 0;
+export const listArtResponseRealWidthInchesExclusiveMin = 0;
 
-export const listArtResponseDefaultScaleExclusiveMin = 0;
-export const listArtResponseDefaultScaleMax = 1;
+export const listArtResponseRealHeightInchesExclusiveMin = 0;
 
-export const listArtResponseMinScaleExclusiveMin = 0;
-export const listArtResponseMinScaleMax = 1;
-
-export const listArtResponseMaxScaleExclusiveMin = 0;
-export const listArtResponseMaxScaleMax = 1;
+export const listArtResponseResizeRangePercentMin = 0;
+export const listArtResponseResizeRangePercentMax = 100;
 
 
 
@@ -164,10 +204,9 @@ export const ListArtResponseItem = zod.object({
   "type": zod.enum(['wall', 'sculpture']),
   "thumbnailFilename": zod.string(),
   "fullImageFilename": zod.string(),
-  "aspectRatio": zod.number().gt(listArtResponseAspectRatioExclusiveMin).describe('width \/ height'),
-  "defaultScale": zod.number().gt(listArtResponseDefaultScaleExclusiveMin).max(listArtResponseDefaultScaleMax).describe('Fraction of the room canvas width the piece occupies'),
-  "minScale": zod.number().gt(listArtResponseMinScaleExclusiveMin).max(listArtResponseMinScaleMax),
-  "maxScale": zod.number().gt(listArtResponseMaxScaleExclusiveMin).max(listArtResponseMaxScaleMax)
+  "realWidthInches": zod.number().gt(listArtResponseRealWidthInchesExclusiveMin).describe('True width of the physical piece, in inches, exactly as an art listing would state it. The on-canvas scale is derived from this against each room\'s own back-wall calibration, so it is never stored per room.\n'),
+  "realHeightInches": zod.number().gt(listArtResponseRealHeightInchesExclusiveMin).describe('True height of the physical piece, in inches.'),
+  "resizeRangePercent": zod.number().min(listArtResponseResizeRangePercentMin).max(listArtResponseResizeRangePercentMax).describe('How far a visitor may size this piece up or down from its true-to-life size, as a percentage. 20 means a range of 80%-120%.\n')
 })
 export const ListArtResponse = zod.array(ListArtResponseItem)
 
@@ -178,16 +217,12 @@ export const ListArtResponse = zod.array(ListArtResponseItem)
 
 
 
-export const createArtBodyAspectRatioExclusiveMin = 0;
+export const createArtBodyRealWidthInchesExclusiveMin = 0;
 
-export const createArtBodyDefaultScaleExclusiveMin = 0;
-export const createArtBodyDefaultScaleMax = 1;
+export const createArtBodyRealHeightInchesExclusiveMin = 0;
 
-export const createArtBodyMinScaleExclusiveMin = 0;
-export const createArtBodyMinScaleMax = 1;
-
-export const createArtBodyMaxScaleExclusiveMin = 0;
-export const createArtBodyMaxScaleMax = 1;
+export const createArtBodyResizeRangePercentMin = 0;
+export const createArtBodyResizeRangePercentMax = 100;
 
 
 
@@ -196,22 +231,17 @@ export const CreateArtBody = zod.object({
   "type": zod.enum(['wall', 'sculpture']),
   "thumbnailFilename": zod.string().min(1),
   "fullImageFilename": zod.string().min(1),
-  "aspectRatio": zod.number().gt(createArtBodyAspectRatioExclusiveMin),
-  "defaultScale": zod.number().gt(createArtBodyDefaultScaleExclusiveMin).max(createArtBodyDefaultScaleMax),
-  "minScale": zod.number().gt(createArtBodyMinScaleExclusiveMin).max(createArtBodyMinScaleMax),
-  "maxScale": zod.number().gt(createArtBodyMaxScaleExclusiveMin).max(createArtBodyMaxScaleMax)
+  "realWidthInches": zod.number().gt(createArtBodyRealWidthInchesExclusiveMin),
+  "realHeightInches": zod.number().gt(createArtBodyRealHeightInchesExclusiveMin),
+  "resizeRangePercent": zod.number().min(createArtBodyResizeRangePercentMin).max(createArtBodyResizeRangePercentMax)
 })
 
-export const createArtResponseAspectRatioExclusiveMin = 0;
+export const createArtResponseRealWidthInchesExclusiveMin = 0;
 
-export const createArtResponseDefaultScaleExclusiveMin = 0;
-export const createArtResponseDefaultScaleMax = 1;
+export const createArtResponseRealHeightInchesExclusiveMin = 0;
 
-export const createArtResponseMinScaleExclusiveMin = 0;
-export const createArtResponseMinScaleMax = 1;
-
-export const createArtResponseMaxScaleExclusiveMin = 0;
-export const createArtResponseMaxScaleMax = 1;
+export const createArtResponseResizeRangePercentMin = 0;
+export const createArtResponseResizeRangePercentMax = 100;
 
 
 
@@ -221,10 +251,9 @@ export const CreateArtResponse = zod.object({
   "type": zod.enum(['wall', 'sculpture']),
   "thumbnailFilename": zod.string(),
   "fullImageFilename": zod.string(),
-  "aspectRatio": zod.number().gt(createArtResponseAspectRatioExclusiveMin).describe('width \/ height'),
-  "defaultScale": zod.number().gt(createArtResponseDefaultScaleExclusiveMin).max(createArtResponseDefaultScaleMax).describe('Fraction of the room canvas width the piece occupies'),
-  "minScale": zod.number().gt(createArtResponseMinScaleExclusiveMin).max(createArtResponseMinScaleMax),
-  "maxScale": zod.number().gt(createArtResponseMaxScaleExclusiveMin).max(createArtResponseMaxScaleMax)
+  "realWidthInches": zod.number().gt(createArtResponseRealWidthInchesExclusiveMin).describe('True width of the physical piece, in inches, exactly as an art listing would state it. The on-canvas scale is derived from this against each room\'s own back-wall calibration, so it is never stored per room.\n'),
+  "realHeightInches": zod.number().gt(createArtResponseRealHeightInchesExclusiveMin).describe('True height of the physical piece, in inches.'),
+  "resizeRangePercent": zod.number().min(createArtResponseResizeRangePercentMin).max(createArtResponseResizeRangePercentMax).describe('How far a visitor may size this piece up or down from its true-to-life size, as a percentage. 20 means a range of 80%-120%.\n')
 })
 
 
@@ -238,16 +267,12 @@ export const UpdateArtParams = zod.object({
 
 
 
-export const updateArtBodyAspectRatioExclusiveMin = 0;
+export const updateArtBodyRealWidthInchesExclusiveMin = 0;
 
-export const updateArtBodyDefaultScaleExclusiveMin = 0;
-export const updateArtBodyDefaultScaleMax = 1;
+export const updateArtBodyRealHeightInchesExclusiveMin = 0;
 
-export const updateArtBodyMinScaleExclusiveMin = 0;
-export const updateArtBodyMinScaleMax = 1;
-
-export const updateArtBodyMaxScaleExclusiveMin = 0;
-export const updateArtBodyMaxScaleMax = 1;
+export const updateArtBodyResizeRangePercentMin = 0;
+export const updateArtBodyResizeRangePercentMax = 100;
 
 
 
@@ -256,22 +281,17 @@ export const UpdateArtBody = zod.object({
   "type": zod.enum(['wall', 'sculpture']).optional(),
   "thumbnailFilename": zod.string().min(1).optional(),
   "fullImageFilename": zod.string().min(1).optional(),
-  "aspectRatio": zod.number().gt(updateArtBodyAspectRatioExclusiveMin).optional(),
-  "defaultScale": zod.number().gt(updateArtBodyDefaultScaleExclusiveMin).max(updateArtBodyDefaultScaleMax).optional(),
-  "minScale": zod.number().gt(updateArtBodyMinScaleExclusiveMin).max(updateArtBodyMinScaleMax).optional(),
-  "maxScale": zod.number().gt(updateArtBodyMaxScaleExclusiveMin).max(updateArtBodyMaxScaleMax).optional()
+  "realWidthInches": zod.number().gt(updateArtBodyRealWidthInchesExclusiveMin).optional(),
+  "realHeightInches": zod.number().gt(updateArtBodyRealHeightInchesExclusiveMin).optional(),
+  "resizeRangePercent": zod.number().min(updateArtBodyResizeRangePercentMin).max(updateArtBodyResizeRangePercentMax).optional()
 })
 
-export const updateArtResponseAspectRatioExclusiveMin = 0;
+export const updateArtResponseRealWidthInchesExclusiveMin = 0;
 
-export const updateArtResponseDefaultScaleExclusiveMin = 0;
-export const updateArtResponseDefaultScaleMax = 1;
+export const updateArtResponseRealHeightInchesExclusiveMin = 0;
 
-export const updateArtResponseMinScaleExclusiveMin = 0;
-export const updateArtResponseMinScaleMax = 1;
-
-export const updateArtResponseMaxScaleExclusiveMin = 0;
-export const updateArtResponseMaxScaleMax = 1;
+export const updateArtResponseResizeRangePercentMin = 0;
+export const updateArtResponseResizeRangePercentMax = 100;
 
 
 
@@ -281,10 +301,9 @@ export const UpdateArtResponse = zod.object({
   "type": zod.enum(['wall', 'sculpture']),
   "thumbnailFilename": zod.string(),
   "fullImageFilename": zod.string(),
-  "aspectRatio": zod.number().gt(updateArtResponseAspectRatioExclusiveMin).describe('width \/ height'),
-  "defaultScale": zod.number().gt(updateArtResponseDefaultScaleExclusiveMin).max(updateArtResponseDefaultScaleMax).describe('Fraction of the room canvas width the piece occupies'),
-  "minScale": zod.number().gt(updateArtResponseMinScaleExclusiveMin).max(updateArtResponseMinScaleMax),
-  "maxScale": zod.number().gt(updateArtResponseMaxScaleExclusiveMin).max(updateArtResponseMaxScaleMax)
+  "realWidthInches": zod.number().gt(updateArtResponseRealWidthInchesExclusiveMin).describe('True width of the physical piece, in inches, exactly as an art listing would state it. The on-canvas scale is derived from this against each room\'s own back-wall calibration, so it is never stored per room.\n'),
+  "realHeightInches": zod.number().gt(updateArtResponseRealHeightInchesExclusiveMin).describe('True height of the physical piece, in inches.'),
+  "resizeRangePercent": zod.number().min(updateArtResponseResizeRangePercentMin).max(updateArtResponseResizeRangePercentMax).describe('How far a visitor may size this piece up or down from its true-to-life size, as a percentage. 20 means a range of 80%-120%.\n')
 })
 
 

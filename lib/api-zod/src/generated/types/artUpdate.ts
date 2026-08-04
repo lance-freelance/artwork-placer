@@ -16,20 +16,12 @@ export interface ArtUpdate {
   /** @minLength 1 */
   fullImageFilename?: string;
   /** @exclusiveMinimum 0 */
-  aspectRatio?: number;
+  realWidthInches?: number;
+  /** @exclusiveMinimum 0 */
+  realHeightInches?: number;
   /**
-     * @maximum 1
-     * @exclusiveMinimum 0
+     * @minimum 0
+     * @maximum 100
      */
-  defaultScale?: number;
-  /**
-     * @maximum 1
-     * @exclusiveMinimum 0
-     */
-  minScale?: number;
-  /**
-     * @maximum 1
-     * @exclusiveMinimum 0
-     */
-  maxScale?: number;
+  resizeRangePercent?: number;
 }

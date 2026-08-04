@@ -5,18 +5,33 @@ import type { ArtObject, Room } from "@workspace/api-zod";
  * server starts against an empty database, so a fresh repl has something to
  * place. Once seeded, the admin panel is the only thing that edits it.
  *
- * Scales are calibrated against the furniture in the room photographs: a full
- * canvas width reads as roughly 4.2m of room, so 1m is about 0.24 of canvas
- * width. The comment on each piece is the real-world size it suggests.
+ * Pieces carry their true physical dimensions in inches. How large each one
+ * draws is worked out at render time against the room's own `wallWidthFeet`,
+ * so the same artwork reads correctly in rooms photographed at different
+ * fields of view. Each figure below was read off furniture of known size in
+ * the photograph — the sofa, the desk, the headboard — then reduced by the
+ * board's zoom factor, because the canvas shows the middle ~83% of the photo
+ * rather than all of it. They are starting points the calibration tool in the
+ * admin panel is meant to refine against the real rooms.
  */
 
 export const seedRooms: Room[] = [
-  { id: "living-room", name: "Living Room", imageFilename: "living-room.jpg", bandSplit: 58 },
-  { id: "loft", name: "Loft", imageFilename: "loft.jpg", bandSplit: 62 },
-  { id: "office", name: "Office", imageFilename: "office.jpg", bandSplit: 55 },
-  { id: "primary-suite", name: "Primary Suite", imageFilename: "primary-suite.jpg", bandSplit: 60 },
+  // Curved bouclé sofa (~8'4") spans a little over half the frame.
+  { id: "living-room", name: "Living Room", imageFilename: "living-room.jpg", bandSplit: 58, wallWidthFeet: 12.5 },
+  // Widest of the four: a long console reads as only a quarter of the frame.
+  { id: "loft", name: "Loft", imageFilename: "loft.jpg", bandSplit: 62, wallWidthFeet: 15 },
+  // Tightest: the executive desk (~7') fills more than half the width.
+  { id: "office", name: "Office", imageFilename: "office.jpg", bandSplit: 55, wallWidthFeet: 11.25 },
+  // King headboard (~6'8") sits in the wall plane at ~42% of the frame.
+  { id: "primary-suite", name: "Primary Suite", imageFilename: "primary-suite.jpg", bandSplit: 60, wallWidthFeet: 12.9 },
 ];
 
+/**
+ * Dimensions are the real-world sizes the collection was designed around,
+ * converted from the centimetre figures each piece was originally specified
+ * in. A 20% resize range is the house default: enough to nudge a piece for
+ * effect, not enough to misrepresent how large it actually is.
+ */
 export const seedArt: ArtObject[] = [
   {
     id: "art-portrait-figure",
@@ -24,11 +39,10 @@ export const seedArt: ArtObject[] = [
     type: "wall",
     thumbnailFilename: "art-portrait-figure-thumb.png",
     fullImageFilename: "art-portrait-figure.png",
-    aspectRatio: 0.65,
     // ~50cm wide framed work
-    defaultScale: 0.11,
-    minScale: 0.06,
-    maxScale: 0.22,
+    realWidthInches: 19.7,
+    realHeightInches: 30.3,
+    resizeRangePercent: 20,
   },
   {
     id: "art-landscape-meadow",
@@ -36,11 +50,10 @@ export const seedArt: ArtObject[] = [
     type: "wall",
     thumbnailFilename: "art-landscape-meadow-thumb.png",
     fullImageFilename: "art-landscape-meadow.png",
-    aspectRatio: 1.23,
     // ~70cm wide landscape in a heavy gilt frame
-    defaultScale: 0.16,
-    minScale: 0.09,
-    maxScale: 0.3,
+    realWidthInches: 27.6,
+    realHeightInches: 22.4,
+    resizeRangePercent: 20,
   },
   {
     id: "art-square-abstract",
@@ -48,11 +61,10 @@ export const seedArt: ArtObject[] = [
     type: "wall",
     thumbnailFilename: "art-square-abstract-thumb.png",
     fullImageFilename: "art-square-abstract.png",
-    aspectRatio: 0.93,
     // ~55cm square canvas
-    defaultScale: 0.12,
-    minScale: 0.07,
-    maxScale: 0.24,
+    realWidthInches: 21.7,
+    realHeightInches: 23.3,
+    resizeRangePercent: 20,
   },
   {
     id: "art-oversized-monochrome",
@@ -60,11 +72,10 @@ export const seedArt: ArtObject[] = [
     type: "wall",
     thumbnailFilename: "art-oversized-monochrome-thumb.png",
     fullImageFilename: "art-oversized-monochrome.png",
-    aspectRatio: 0.71,
     // ~85cm wide, ~1.2m tall — the statement piece
-    defaultScale: 0.2,
-    minScale: 0.12,
-    maxScale: 0.34,
+    realWidthInches: 33.5,
+    realHeightInches: 47.2,
+    resizeRangePercent: 20,
   },
   {
     id: "art-oval-portrait",
@@ -72,11 +83,10 @@ export const seedArt: ArtObject[] = [
     type: "wall",
     thumbnailFilename: "art-oval-portrait-thumb.png",
     fullImageFilename: "art-oval-portrait.png",
-    aspectRatio: 0.76,
     // ~40cm oval portrait
-    defaultScale: 0.09,
-    minScale: 0.05,
-    maxScale: 0.18,
+    realWidthInches: 15.7,
+    realHeightInches: 20.7,
+    resizeRangePercent: 20,
   },
   {
     id: "art-small-sketch",
@@ -84,11 +94,10 @@ export const seedArt: ArtObject[] = [
     type: "wall",
     thumbnailFilename: "art-small-sketch-thumb.png",
     fullImageFilename: "art-small-sketch.png",
-    aspectRatio: 0.62,
     // ~30cm sketch, the smallest piece in the collection
-    defaultScale: 0.07,
-    minScale: 0.04,
-    maxScale: 0.15,
+    realWidthInches: 11.8,
+    realHeightInches: 19,
+    resizeRangePercent: 20,
   },
   {
     id: "sculpture-stone-form",
@@ -96,11 +105,10 @@ export const seedArt: ArtObject[] = [
     type: "sculpture",
     thumbnailFilename: "sculpture-stone-form-thumb.png",
     fullImageFilename: "sculpture-stone-form.png",
-    aspectRatio: 0.53,
     // ~70cm tall stone form on its plinth
-    defaultScale: 0.08,
-    minScale: 0.05,
-    maxScale: 0.16,
+    realWidthInches: 14.6,
+    realHeightInches: 27.6,
+    resizeRangePercent: 20,
   },
   {
     id: "sculpture-bronze-figure",
@@ -108,10 +116,9 @@ export const seedArt: ArtObject[] = [
     type: "sculpture",
     thumbnailFilename: "sculpture-bronze-figure-thumb.png",
     fullImageFilename: "sculpture-bronze-figure.png",
-    aspectRatio: 1.32,
     // ~45cm long reclining bronze
-    defaultScale: 0.1,
-    minScale: 0.06,
-    maxScale: 0.2,
+    realWidthInches: 17.7,
+    realHeightInches: 13.4,
+    resizeRangePercent: 20,
   },
 ];

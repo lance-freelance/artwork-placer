@@ -112,7 +112,7 @@ export function ArtManager() {
                         {item.type}
                       </Badge>
                       <span className="text-xs text-muted-foreground truncate">
-                        AR: {item.aspectRatio}
+                        {item.realWidthInches}" x {item.realHeightInches}"
                       </span>
                     </div>
                   </div>

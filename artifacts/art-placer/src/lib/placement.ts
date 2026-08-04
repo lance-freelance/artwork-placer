@@ -1,4 +1,5 @@
 import type { ArtObject as ArtObjectData, Placement, Room } from '../types';
+import { scaleFor } from './sizing';
 
 /**
  * Shared placement maths. Kept separate from the components so the entry
@@ -116,7 +117,7 @@ export function resolveDrop({
       roomId: room.id,
       x,
       y,
-      scale: object.defaultScale,
+      scale: scaleFor(object, room),
     },
   };
 }
@@ -162,7 +163,7 @@ export function resolveTapPlace({
       roomId: room.id,
       x,
       y,
-      scale: object.defaultScale,
+      scale: scaleFor(object, room),
     },
   };
 }

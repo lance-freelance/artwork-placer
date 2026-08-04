@@ -65,11 +65,11 @@ Undoing an action performed in another room takes the board to that room, so the
 
 **How to apply:** every reversible action has to carry which room it touched. Anything that spans rooms is undone from where the user was standing. Two traps: the recorded room may have been deleted by the time undo runs, and a snapshot valid when taken may hold placements that a later band-split change has invalidated — re-check both at the moment undo fires, not only when the catalog changes.
 
-## Object sizing is calibrated to the room photographs
+## Object sizing is real-world, calibrated per room
 
-Scales are a fraction of canvas width, judged against the furniture in the photos: a full canvas width reads as roughly 4.2m of room, so 1m ≈ 0.24 of canvas width. Guessing scales without checking them rendered in a room produces art that reads far too large.
+Pieces carry their true physical dimensions and each room carries the real width of its back wall; the on-screen size is derived from the two. A single global "canvas width ≈ 4.2m" constant used to stand in for every room and is gone — it was the bug that made the same piece read correctly in one room and wrong in the next. See [Art Placer real-world sizing](art-placer-room-sizing.md), which also covers the board zoom that any room-measuring tool must mirror.
 
-**How to apply:** when adding or resizing objects, seed a few placements temporarily, screenshot the room, and judge against the sofa before committing numbers.
+**How to apply:** never reintroduce a per-object scale factor or a shared room-width constant. When judging a calibration, screenshot the room and check a piece against the furniture — but read the sizing note first, because measuring the source photo rather than the board's cropped view is off by the zoom factor.
 
 ## Layout constraint — the canvas is a matte, never full-bleed
 

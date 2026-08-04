@@ -31,6 +31,8 @@ import type {
   Placement,
   PlacementSet,
   Room,
+  RoomImageFile,
+  RoomImageUpload,
   RoomInput,
   RoomUpdate
 } from './api.schemas';
@@ -356,6 +358,156 @@ export function useGetArtImage<TData = Awaited<ReturnType<typeof getArtImage>>, 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetArtImageQueryOptions(filename,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getUploadRoomImageUrl = () => {
+
+
+
+
+  return `/api/media/rooms`
+}
+
+/**
+ * Writes one room photograph into object storage, mirroring the art upload route. Rooms have no tray thumbnail, so a single image is sent and no scaled copy is generated. The server owns the filename, so the base name is a suggestion that is slugified and made unique before anything is written.
+ * @summary Save a room photograph
+ */
+export const uploadRoomImage = async (roomImageUpload: RoomImageUpload, options?: Parameters<typeof customFetch>[1]): Promise<RoomImageFile> => {
+
+  return customFetch<RoomImageFile>(getUploadRoomImageUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(roomImageUpload)
+  }
+);}
+
+
+
+
+
+export const getUploadRoomImageMutationOptions = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadRoomImage>>, TError,{data: BodyType<RoomImageUpload>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof uploadRoomImage>>, TError,{data: BodyType<RoomImageUpload>}, TContext> => {
+
+const mutationKey = ['uploadRoomImage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof uploadRoomImage>>, {data: BodyType<RoomImageUpload>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  uploadRoomImage(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UploadRoomImageMutationResult = NonNullable<Awaited<ReturnType<typeof uploadRoomImage>>>
+    export type UploadRoomImageMutationBody = BodyType<RoomImageUpload>
+    export type UploadRoomImageMutationError = ErrorType<ErrorResponse>
+
+    /**
+ * @summary Save a room photograph
+ */
+export const useUploadRoomImage = <TError = ErrorType<ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof uploadRoomImage>>, TError,{data: BodyType<RoomImageUpload>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof uploadRoomImage>>,
+        TError,
+        {data: BodyType<RoomImageUpload>},
+        TContext
+      > => {
+      return useMutation(getUploadRoomImageMutationOptions(options));
+    }
+
+export const getGetRoomImageUrl = (filename: string,) => {
+
+
+
+
+  return `/api/room-image/${filename}`
+}
+
+/**
+ * Returns the image bytes, checking object storage first (uploads) and the seeded filesystem copies second — the same resolution order as art images, and for the same reason: uploads must survive a publish, and the SPA's catch-all static route cannot 404 an absent file.
+ * @summary Serve a room image file
+ */
+export const getRoomImage = async (filename: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetRoomImageUrl(filename),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRoomImageQueryKey = (filename: string,) => {
+    return [
+    `/api/room-image/${filename}`
+    ] as const;
+    }
+
+
+export const getGetRoomImageQueryOptions = <TData = Awaited<ReturnType<typeof getRoomImage>>, TError = ErrorType<ErrorResponse>>(filename: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRoomImage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRoomImageQueryKey(filename);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRoomImage>>> = ({ signal }) => getRoomImage(filename, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: filename !== null && filename !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRoomImage>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRoomImageQueryResult = NonNullable<Awaited<ReturnType<typeof getRoomImage>>>
+export type GetRoomImageQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Serve a room image file
+ */
+
+export function useGetRoomImage<TData = Awaited<ReturnType<typeof getRoomImage>>, TError = ErrorType<ErrorResponse>>(
+ filename: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRoomImage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRoomImageQueryOptions(filename,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

@@ -113,6 +113,68 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /media/rooms:
+    post:
+      operationId: uploadRoomImage
+      tags: [media]
+      summary: Save a room photograph
+      description: >
+        Writes one room photograph into object storage, mirroring the art
+        upload route. Rooms have no tray thumbnail, so a single image is sent
+        and no scaled copy is generated. The server owns the filename, so the
+        base name is a suggestion that is slugified and made unique before
+        anything is written.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoomImageUpload"
+      responses:
+        "201":
+          description: The filename the image was written under
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoomImageFile"
+        "400":
+          description: The upload was malformed or too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /room-image/{filename}:
+    get:
+      operationId: getRoomImage
+      tags: [media]
+      summary: Serve a room image file
+      description: >
+        Returns the image bytes, checking object storage first (uploads) and
+        the seeded filesystem copies second — the same resolution order as
+        art images, and for the same reason: uploads must survive a publish,
+        and the SPA's catch-all static route cannot 404 an absent file.
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The image bytes
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: No such room image
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /rooms:
     get:
       operationId: listRooms
@@ -419,6 +481,37 @@ components:
         - fullImageFilename
         - thumbnailFilename
 
+    RoomImageUpload:
+      type: object
+      properties:
+        baseName:
+          description: >
+            Suggested file stem, usually slugified from the room's name. The
+            server sanitises it and appends a suffix if the name is taken, so
+            it can never escape the rooms directory or overwrite an existing
+            image.
+          type: string
+          minLength: 1
+        image:
+          description: Data URL of the room photograph as uploaded
+          type: string
+      required:
+        - baseName
+        - image
+
+    RoomImageFile:
+      type: object
+      properties:
+        imageFilename:
+          type: string
+        renamedFrom:
+          description: >
+            Present when the requested name was already taken and the file was
+            saved under a suffixed name instead.
+          type: string
+      required:
+        - imageFilename
+
     Room:
       type: object
       properties:
@@ -436,11 +529,23 @@ components:
           type: number
           minimum: 1
           maximum: 99
+        wallWidthFeet:
+          description: >
+            Real-world width, in decimal feet, of the BACK WALL spanned by the
+            full canvas width — measured corner to corner exactly where that
+            wall fills the frame. Deliberately not the room's footprint, its
+            depth, or anything visible through an archway. Every placed piece
+            is scaled against this number, so it is what lets one 48" canvas
+            read at the correct size in rooms photographed at different fields
+            of view. Set by the calibration tool in the admin panel.
+          type: number
+          exclusiveMinimum: 0
       required:
         - id
         - name
         - imageFilename
         - bandSplit
+        - wallWidthFeet
 
     RoomInput:
       type: object
@@ -455,10 +560,15 @@ components:
           type: number
           minimum: 1
           maximum: 99
+        wallWidthFeet:
+          description: Real-world back-wall width in decimal feet.
+          type: number
+          exclusiveMinimum: 0
       required:
         - name
         - imageFilename
         - bandSplit
+        - wallWidthFeet
 
     RoomUpdate:
       type: object
@@ -473,6 +583,9 @@ components:
           type: number
           minimum: 1
           maximum: 99
+        wallWidthFeet:
+          type: number
+          exclusiveMinimum: 0
 
     ArtObject:
       type: object
@@ -487,33 +600,34 @@ components:
           type: string
         fullImageFilename:
           type: string
-        aspectRatio:
-          description: width / height
+        realWidthInches:
+          description: >
+            True width of the physical piece, in inches, exactly as an art
+            listing would state it. The on-canvas scale is derived from this
+            against each room's own back-wall calibration, so it is never
+            stored per room.
           type: number
           exclusiveMinimum: 0
-        defaultScale:
-          description: Fraction of the room canvas width the piece occupies
+        realHeightInches:
+          description: True height of the physical piece, in inches.
           type: number
           exclusiveMinimum: 0
-          maximum: 1
-        minScale:
+        resizeRangePercent:
+          description: >
+            How far a visitor may size this piece up or down from its
+            true-to-life size, as a percentage. 20 means a range of 80%-120%.
           type: number
-          exclusiveMinimum: 0
-          maximum: 1
-        maxScale:
-          type: number
-          exclusiveMinimum: 0
-          maximum: 1
+          minimum: 0
+          maximum: 100
       required:
         - id
         - name
         - type
         - thumbnailFilename
         - fullImageFilename
-        - aspectRatio
-        - defaultScale
-        - minScale
-        - maxScale
+        - realWidthInches
+        - realHeightInches
+        - resizeRangePercent
 
     ObjectType:
       type: string
@@ -535,30 +649,24 @@ components:
         fullImageFilename:
           type: string
           minLength: 1
-        aspectRatio:
+        realWidthInches:
           type: number
           exclusiveMinimum: 0
-        defaultScale:
+        realHeightInches:
           type: number
           exclusiveMinimum: 0
-          maximum: 1
-        minScale:
+        resizeRangePercent:
           type: number
-          exclusiveMinimum: 0
-          maximum: 1
-        maxScale:
-          type: number
-          exclusiveMinimum: 0
-          maximum: 1
+          minimum: 0
+          maximum: 100
       required:
         - name
         - type
         - thumbnailFilename
         - fullImageFilename
-        - aspectRatio
-        - defaultScale
-        - minScale
-        - maxScale
+        - realWidthInches
+        - realHeightInches
+        - resizeRangePercent
 
     ArtUpdate:
       type: object
@@ -574,21 +682,16 @@ components:
         fullImageFilename:
           type: string
           minLength: 1
-        aspectRatio:
+        realWidthInches:
           type: number
           exclusiveMinimum: 0
-        defaultScale:
+        realHeightInches:
           type: number
           exclusiveMinimum: 0
-          maximum: 1
-        minScale:
+        resizeRangePercent:
           type: number
-          exclusiveMinimum: 0
-          maximum: 1
-        maxScale:
-          type: number
-          exclusiveMinimum: 0
-          maximum: 1
+          minimum: 0
+          maximum: 100
 
     Placement:
       type: object

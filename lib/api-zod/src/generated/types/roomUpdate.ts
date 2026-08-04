@@ -16,4 +16,6 @@ export interface RoomUpdate {
      * @maximum 99
      */
   bandSplit?: number;
+  /** @exclusiveMinimum 0 */
+  wallWidthFeet?: number;
 }

@@ -18,5 +18,7 @@ export * from './objectType';
 export * from './placement';
 export * from './placementSet';
 export * from './room';
+export * from './roomImageFile';
+export * from './roomImageUpload';
 export * from './roomInput';
 export * from './roomUpdate';

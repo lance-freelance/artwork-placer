@@ -4,6 +4,7 @@ import { useStore } from '../state/Store';
 import { usePointerDrag } from '../hooks/usePointerDrag';
 import { cn } from '@/lib/utils';
 import { resolveDrop, resolveTapPlace, type DragGeometry } from '@/lib/placement';
+import { aspectRatioOf, scaleFor } from '@/lib/sizing';
 import { artImageUrl, type Placement } from '../types';
 
 /**
@@ -118,8 +119,11 @@ export function ArtObject({ placement }: { placement: Placement }) {
       style={{
         left: `${placement.x}%`,
         top: `${placement.y}%`,
-        width: `${placement.scale * 100}%`,
-        aspectRatio: obj.aspectRatio,
+        // Sized from the piece's real dimensions against this room's own
+        // calibration, not from the stored placement scale: recalibrating a
+        // room has to resize everything already hanging in it.
+        width: `${scaleFor(obj, room) * 100}%`,
+        aspectRatio: aspectRatioOf(obj),
         transform: 'translate(-50%, -50%)',
         ...handlers.style,
       }}

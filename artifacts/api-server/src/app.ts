@@ -30,7 +30,11 @@ app.use(cors());
 // small metadata documents every other route exchanges. It is mounted first
 // and only for that path; the general parser below then sees the body as
 // already read and leaves it alone.
-app.use("/api/media/art", express.json({ limit: "20mb" }));
+// Image uploads arrive as base64 in JSON, so every media route needs a body
+// limit far above the default ~100kb. Scoped to /api/media rather than the
+// individual upload paths so adding a new kind cannot silently inherit the
+// default limit and reject ordinary photographs.
+app.use("/api/media", express.json({ limit: "20mb" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

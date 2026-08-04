@@ -16,4 +16,9 @@ export interface RoomInput {
      * @maximum 99
      */
   bandSplit: number;
+  /**
+     * Real-world back-wall width in decimal feet.
+     * @exclusiveMinimum 0
+     */
+  wallWidthFeet: number;
 }

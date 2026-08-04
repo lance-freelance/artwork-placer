@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react';
 import { useStore } from '../state/Store';
 import { ArtObject } from './ArtObject';
 import { cn } from '@/lib/utils';
-import { assetUrl } from '../types';
+import { roomImageUrl } from '../types';
+import { ROOM_IMAGE_ZOOM } from '@/lib/sizing';
 import { PlacementBand } from './PlacementBand';
 
 export function RoomCanvas({ roomId, isActive }: { roomId: string, isActive: boolean }) {
@@ -56,12 +57,19 @@ export function RoomCanvas({ roomId, isActive }: { roomId: string, isActive: boo
         `cover` would distort the photo on off-ratio boxes and silently move
         every placement, because placements are stored as percentages of this
         box.
+
+        The zoom means this box shows the middle ~83% of the photo, not all of
+        it. Anything that measures a room — the wall calibration tool — must
+        apply the same zoom, or it measures wall that is never on screen. It
+        comes from the shared `ROOM_IMAGE_ZOOM` rather than a local class so
+        the two cannot drift apart.
       */}
       <img
-        src={assetUrl(`rooms/${room.imageFilename}`)}
+        src={roomImageUrl(room.imageFilename)}
         alt={room.name}
         draggable={false}
-        className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none scale-[1.2]"
+        className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none"
+        style={{ transform: `scale(${ROOM_IMAGE_ZOOM})` }}
       />
       
       {/* Placements */}

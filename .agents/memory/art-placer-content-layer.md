@@ -120,12 +120,36 @@ client-side branching.
 with an upload route) must follow the same pattern: write to GCS, serve via an
 API route, expose a dedicated URL helper in `src/types.ts`.
 
-## Rooms have no upload route — filesystem only
+## Room photos go through the API exactly as art does
 
-Room photos are placed manually in `public/rooms/`. There is no `POST /api/media/room`.
-The listing route reads them from the filesystem. Adding a room upload route
-would follow the same pattern as art (GCS write + `/api/room-image/:filename`
-serve route), but that work has not been done.
+Rooms have their own upload route and their own serve route, backed by object
+storage, and the client uses a dedicated URL helper rather than a static asset
+path. Media handling is written once over a map of kinds rather than duplicated
+per kind.
+
+**Why:** a spec once called for writing uploaded room photos into the source
+tree under `public/`. Honouring that literally would have lost every uploaded
+room on the next publish, because the production build bakes static files at
+deploy time — the same reason art already went to object storage. The failure
+would have been invisible in development.
+
+**How to apply:** treat "save the upload into `public/`" as a red flag in this
+project whatever a spec says. Every new image kind gets the same treatment:
+object storage write, API serve route, URL helper in `src/types.ts`.
+
+## Upload routes need their body limit widened deliberately
+
+Images are posted as base64 inside JSON, which blows straight past Express's
+default ~100kb body limit. Mount the enlarged JSON parser on the media path
+prefix rather than on each individual upload route.
+
+**Why:** it was scoped to the art upload path alone, so a later room upload
+route silently inherited the default and rejected ordinary photographs with a
+413 before any of its own validation ran. Path-prefix scoping means a new kind
+cannot repeat this.
+
+**How to apply:** verify with a payload over 100kb and assert the response is
+the handler's own error, not a 413.
 
 ## Verification uploads are user-visible content — clean both stores
 

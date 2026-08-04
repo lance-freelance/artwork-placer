@@ -39,6 +39,22 @@ export interface ArtImageFiles {
   renamedFrom?: string;
 }
 
+export interface RoomImageUpload {
+  /**
+     * Suggested file stem, usually slugified from the room's name. The server sanitises it and appends a suffix if the name is taken, so it can never escape the rooms directory or overwrite an existing image.
+     * @minLength 1
+     */
+  baseName: string;
+  /** Data URL of the room photograph as uploaded */
+  image: string;
+}
+
+export interface RoomImageFile {
+  imageFilename: string;
+  /** Present when the requested name was already taken and the file was saved under a suffixed name instead. */
+  renamedFrom?: string;
+}
+
 export interface Room {
   id: string;
   name: string;
@@ -50,6 +66,11 @@ export interface Room {
      * @maximum 99
      */
   bandSplit: number;
+  /**
+     * Real-world width, in decimal feet, of the BACK WALL spanned by the full canvas width — measured corner to corner exactly where that wall fills the frame. Deliberately not the room's footprint, its depth, or anything visible through an archway. Every placed piece is scaled against this number, so it is what lets one 48" canvas read at the correct size in rooms photographed at different fields of view. Set by the calibration tool in the admin panel.
+     * @exclusiveMinimum 0
+     */
+  wallWidthFeet: number;
 }
 
 export interface RoomInput {
@@ -62,6 +83,11 @@ export interface RoomInput {
      * @maximum 99
      */
   bandSplit: number;
+  /**
+     * Real-world back-wall width in decimal feet.
+     * @exclusiveMinimum 0
+     */
+  wallWidthFeet: number;
 }
 
 export interface RoomUpdate {
@@ -74,6 +100,8 @@ export interface RoomUpdate {
      * @maximum 99
      */
   bandSplit?: number;
+  /** @exclusiveMinimum 0 */
+  wallWidthFeet?: number;
 }
 
 export type ObjectType = typeof ObjectType[keyof typeof ObjectType];
@@ -91,26 +119,21 @@ export interface ArtObject {
   thumbnailFilename: string;
   fullImageFilename: string;
   /**
-     * width / height
+     * True width of the physical piece, in inches, exactly as an art listing would state it. The on-canvas scale is derived from this against each room's own back-wall calibration, so it is never stored per room.
      * @exclusiveMinimum 0
      */
-  aspectRatio: number;
+  realWidthInches: number;
   /**
-     * Fraction of the room canvas width the piece occupies
-     * @maximum 1
+     * True height of the physical piece, in inches.
      * @exclusiveMinimum 0
      */
-  defaultScale: number;
+  realHeightInches: number;
   /**
-     * @maximum 1
-     * @exclusiveMinimum 0
+     * How far a visitor may size this piece up or down from its true-to-life size, as a percentage. 20 means a range of 80%-120%.
+     * @minimum 0
+     * @maximum 100
      */
-  minScale: number;
-  /**
-     * @maximum 1
-     * @exclusiveMinimum 0
-     */
-  maxScale: number;
+  resizeRangePercent: number;
 }
 
 export interface ArtInput {
@@ -122,22 +145,14 @@ export interface ArtInput {
   /** @minLength 1 */
   fullImageFilename: string;
   /** @exclusiveMinimum 0 */
-  aspectRatio: number;
+  realWidthInches: number;
+  /** @exclusiveMinimum 0 */
+  realHeightInches: number;
   /**
-     * @maximum 1
-     * @exclusiveMinimum 0
+     * @minimum 0
+     * @maximum 100
      */
-  defaultScale: number;
-  /**
-     * @maximum 1
-     * @exclusiveMinimum 0
-     */
-  minScale: number;
-  /**
-     * @maximum 1
-     * @exclusiveMinimum 0
-     */
-  maxScale: number;
+  resizeRangePercent: number;
 }
 
 export interface ArtUpdate {
@@ -149,22 +164,14 @@ export interface ArtUpdate {
   /** @minLength 1 */
   fullImageFilename?: string;
   /** @exclusiveMinimum 0 */
-  aspectRatio?: number;
+  realWidthInches?: number;
+  /** @exclusiveMinimum 0 */
+  realHeightInches?: number;
   /**
-     * @maximum 1
-     * @exclusiveMinimum 0
+     * @minimum 0
+     * @maximum 100
      */
-  defaultScale?: number;
-  /**
-     * @maximum 1
-     * @exclusiveMinimum 0
-     */
-  minScale?: number;
-  /**
-     * @maximum 1
-     * @exclusiveMinimum 0
-     */
-  maxScale?: number;
+  resizeRangePercent?: number;
 }
 
 export interface Placement {

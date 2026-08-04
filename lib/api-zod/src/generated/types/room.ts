@@ -17,4 +17,9 @@ export interface Room {
      * @maximum 99
      */
   bandSplit: number;
+  /**
+     * Real-world width, in decimal feet, of the BACK WALL spanned by the full canvas width — measured corner to corner exactly where that wall fills the frame. Deliberately not the room's footprint, its depth, or anything visible through an archway. Every placed piece is scaled against this number, so it is what lets one 48" canvas read at the correct size in rooms photographed at different fields of view. Set by the calibration tool in the admin panel.
+     * @exclusiveMinimum 0
+     */
+  wallWidthFeet: number;
 }

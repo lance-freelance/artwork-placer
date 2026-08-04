@@ -1,0 +1,116 @@
+# Room Image Upload, Art Sizing & Room Calibration Reset — Standalone Build Spec
+
+This is a self-contained fix to the existing Art Placer admin panel (Rooms + Art Catalog tabs). It adds image upload to the Rooms tab (currently missing — rooms can only be selected from existing files in `/public/rooms/`), and replaces manually-entered aspect ratio and scale fields with real-world dimensions and a per-room calibration system. Run this as its own exercise, independent of any other in-flight phase work. Build in the order below — room upload first, since the calibration tool in step 2 is added to the same room form.
+
+---
+
+## Problem being fixed
+
+The current Art Catalog form asks the admin to enter **Aspect Ratio** and three **Scale** fractions (Min / Default / Max) directly. These are derived values — nobody naturally knows a piece's "aspect ratio" or "0.11 scale fraction of canvas width." Real art listings describe size in inches (e.g. "48 x 48""), and that's what the admin should be entering instead.
+
+There's also a structural bug risk in the current model: if an object's scale is computed once using a single global room-calibration constant, the same piece will render at the wrong *apparent* size in any room whose photo has a different field of view than whatever the calibration assumed. Scale needs to be computed **per room**, at render time — not stored once per object. And that calibration needs to be anchored to one clearly-defined thing (the back wall's width), not a vague notion of "room size," or different people calibrating different rooms will end up measuring different things without realizing it.
+
+Separately: the Rooms admin tab currently has no image upload — rooms can only be assigned an image already sitting in `/public/rooms/`. This is being added in the same pass since it touches the same form the calibration tool below is added to.
+
+---
+
+## 1. Add room image upload
+
+- Add an **Upload Image** control to the Rooms admin tab, matching the pattern already built for Art in the earlier phase (reuse that upload component/approach — no thumbnail generation needed here, rooms don't have a tray thumbnail).
+- Uploaded images save to `/public/rooms/`, same location as manually-added files. The existing filename dropdown and the new upload control are two ways to populate the same `imageFilename` field — keep both; the dropdown still covers "an image was dropped into the folder by hand."
+- Room images have a required 16:10 spec. After upload, read the file's actual dimensions client-side and show a warning (not a hard block) if it's off-ratio, so a mismatched image doesn't get saved silently. The filename-dropdown path currently has no such check either — this warning should apply to both entry methods, not just fresh uploads.
+
+---
+
+## 2. Add a calibration value to each room
+
+**What's actually being calibrated:** the real-world width of the **back wall**, measured edge-to-edge exactly where it fills the canvas — i.e. "how wide is the wall visible in this photo, corner to corner," not the room's total footprint or its depth. This is the plane wall art hangs on and the reference every placed object (wall or floor) scales against, so it needs to be unambiguous. The calibration tool and its label should say **"Back wall width"**, not "room size" or "room width," so there's no confusion with floor depth or the room extending past the visible walls (e.g. into the archway/hallway some photos show).
+
+- New room field: `wallWidthFeet` — the real-world width, in feet (decimal, e.g. `13.5`), of the back wall spanning the full canvas width.
+- Build a **reference-line calibration tool** in the Rooms admin tab, as easy as possible for the admin to use:
+  - Overlay a draggable line on the room image.
+  - Let the admin specify a known real-world length for that line as two small inputs: **Feet** and **Inches** (not decimal feet, not meters — e.g. `6 ft` `8 in`), matching how people actually talk about the size of a door or piece of furniture.
+  - Default those inputs to **6 ft 8 in** (a standard interior door frame, visible in most room photos and a reliable universal reference) — the admin can change the value and drag the line against any feature they trust instead (a known sofa width, a window frame, etc).
+- On save, compute `wallWidthFeet` from the line's pixel length vs. its stated real-world length and the canvas's known pixel width. **Store the computed value, not the raw line coordinates.**
+- Show the computed result back to the admin in the same **feet + inches** format (e.g. "Back wall width: 13 ft 6 in") so they can sanity-check it against what the room actually looks like before saving.
+- This is a one-time setup step per room. Calibrate all 4 existing rooms (Living Room, Loft, Office, Primary Suite) once this tool is built.
+
+### Room record shape (updated)
+```ts
+{
+  id: string,
+  name: string,
+  imageFilename: string,
+  bandSplit: number,       // existing — % of canvas height
+  wallWidthFeet: number    // new — real-world back-wall width (decimal feet) spanned by full canvas width
+}
+```
+
+---
+
+## 3. Replace the Art form's size fields with real-world dimensions
+
+- **Remove** from the admin Art form: Aspect Ratio, Min Scale, Default Scale, Max Scale as manually-entered fields.
+- **Add**: `Width (in)` and `Height (in)` — plain number inputs, matching how art is listed commercially (a piece described as "48 x 48"" enters directly as 48 / 48).
+- Aspect ratio becomes a **read-only computed display** under those two fields (`width / height`) — shown for reference, never set directly.
+- Add a single `Resize Range (%)` field, default ~20%. This replaces the old Min/Max Scale pair: it defines how far a visitor can size a piece up or down from its true-to-life default at placement time, rather than the admin hand-picking three raw fractions.
+
+### Art object record shape (updated)
+```ts
+{
+  id: string,
+  name: string,
+  type: "wall" | "sculpture",
+  thumbnailFilename: string,
+  fullImageFilename: string,
+  realWidthInches: number,   // new
+  realHeightInches: number,  // new
+  resizeRangePercent: number // new — replaces minScale/maxScale, default 20
+}
+```
+`aspectRatio`, `defaultScale`, `minScale`, `maxScale` are removed from storage entirely — all computed at render time (see below).
+
+---
+
+## 4. Compute scale per room, at render time
+
+- At the point a piece is rendered or placed in a given room:
+  ```
+  scale = (realWidthInches / 12) / room.wallWidthFeet
+  ```
+  expressed as a fraction of that room's canvas width. (`realWidthInches / 12` converts the piece's width to feet so both sides of the ratio are in the same unit.)
+- Min/max resize bounds for the visitor-facing drag interaction are computed live:
+  ```
+  minScale = scale × (1 - resizeRangePercent / 100)
+  maxScale = scale × (1 + resizeRangePercent / 100)
+  ```
+- This means the same object correctly renders at a different (accurate) on-canvas scale in each room, based on that room's own back-wall calibration — no per-object, per-room overrides needed anywhere.
+
+---
+
+## 5. Migration for existing catalog entries
+
+- The 9 existing art pieces currently have stored `aspectRatio` + scale values with no real-inches equivalent. There's no reliable way to back-calculate true inches from those without knowing the exact prior calibration assumption used to generate them.
+- The admin will need to **re-enter real width/height by hand** for each existing piece, using the piece name/thumbnail as reference. This should take a few minutes total — not worth automating for 9 items.
+- Build the updated Art form first, then walk through the existing catalog list re-entering real dimensions for each entry before considering this phase done.
+
+---
+
+## Acceptance criteria
+
+- Rooms can be created/edited using either an uploaded image or the existing filename dropdown; both save to `/public/rooms/` and populate the same field.
+- An off-ratio room image (not 16:10) triggers a visible warning, not a silent save, regardless of which entry method was used.
+- Room calibration tool produces a `wallWidthFeet` value (back wall width, shown to the admin in feet + inches) that they can review and re-adjust at any time (not a one-shot value locked after first save).
+- Art form only asks for Width (in) / Height (in); aspect ratio is shown as computed output, never entered.
+- The same art object renders at a correctly *proportioned* (not identical) canvas scale when placed in two different rooms with different calibration values — verify by placing one piece in two rooms and visually confirming the size relative to each room's furniture looks right in both.
+- All 4 rooms are calibrated and all 9 existing catalog pieces have real width/height entered before this is considered complete.
+- No AI/vision calls anywhere in this flow — calibration and scale are pure geometry, computed client-side.
+- Confirm existing placements (if any test placements exist) still render at a reasonable size after the scale computation changes — spot check is enough, this isn't expected to be pixel-identical to before.
+
+---
+
+## Notes for whoever runs this in Replit
+- This does not touch placement logic, band-split rules, drag mechanics, or visual/matte layout — it is scoped entirely to room image upload, art sizing, and room calibration.
+- Reuse the existing Art-tab upload component/pattern for the room upload step rather than building a new one from scratch.
+- Implement and verify this as one complete pass — it's a small, self-contained exercise, not a multi-phase build.
+- Report back which files were changed and confirm the acceptance criteria above before considering it done.
