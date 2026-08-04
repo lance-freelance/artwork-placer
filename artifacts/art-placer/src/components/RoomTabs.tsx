@@ -1,5 +1,6 @@
 import { useStore } from '../state/Store';
 import { cn } from '@/lib/utils';
+import { assetUrl } from '../types';
 
 /**
  * Pill-shaped room selector bar centred at the top of the canvas.
@@ -10,7 +11,7 @@ export function RoomTabs() {
   const { rooms, activeRoomId, setActiveRoomId, placements } = useStore();
 
   return (
-    <div className="flex items-center gap-1 bg-white/15 backdrop-blur-md rounded-full px-1 py-1 shadow-sm">
+    <div className="flex items-center gap-1 bg-white/15 backdrop-blur-md rounded-full px-1.5 py-1.5 shadow-sm">
       {rooms.map((room) => {
         const isActive = room.id === activeRoomId;
         const hasArt = placements.some((p) => p.roomId === room.id);
@@ -41,6 +42,16 @@ export function RoomTabs() {
           </button>
         );
       })}
+
+      {/* Keep the brand mark inside the same navigation control group. */}
+      <div className="ml-1 pl-2.5 pr-2 border-l border-white/20 flex items-center">
+        <img
+          src={assetUrl('l3-white-horizontal-logo.png')}
+          alt="Living Luxury Lab"
+          className="h-12 w-auto max-w-[132px] object-contain"
+          draggable={false}
+        />
+      </div>
     </div>
   );
 }

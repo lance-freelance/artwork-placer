@@ -48,23 +48,10 @@ export function MainLayout() {
         <RoomCarousel />
       </div>
 
-      {/* ── Top bar: room tabs centred, logo top-right ── */}
-      <div className="absolute top-0 left-0 right-0 z-20 flex items-start justify-between px-4 pt-4 pointer-events-none">
-        {/* Spacer matches logo width so tabs stay truly centred */}
-        <div className="w-32 shrink-0" />
-
+      {/* ── Top bar: room tabs and brand mark in one centred control ── */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex justify-center px-4 pt-4 pointer-events-none">
         <div className="pointer-events-auto">
           <RoomTabs />
-        </div>
-
-        {/* Living Luxury Lab logo — white version */}
-        <div className="pointer-events-auto w-32 shrink-0 flex justify-end">
-          <img
-            src={assetUrl('l3-white-horizontal-logo.png')}
-            alt="Living Luxury Lab"
-            className="h-10 object-contain"
-            draggable={false}
-          />
         </div>
       </div>
 
