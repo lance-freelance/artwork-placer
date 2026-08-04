@@ -45,7 +45,7 @@ export function RoomCanvas({ roomId, isActive }: { roomId: string, isActive: boo
       ref={containerRef}
       id={isActive ? 'active-room-canvas' : undefined}
       className={cn(
-        "relative w-full aspect-[16/10] overflow-hidden bg-muted transition-opacity duration-500",
+        "relative w-full h-full overflow-hidden bg-muted transition-opacity duration-500",
         isActive ? "opacity-100" : "opacity-0 pointer-events-none"
       )}
     >

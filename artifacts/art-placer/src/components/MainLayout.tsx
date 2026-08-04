@@ -1,9 +1,8 @@
 import { motion } from 'framer-motion';
-import { branding } from '../config/branding';
 import { RoomCarousel } from './RoomCarousel';
 import { InventoryTray } from './InventoryTray';
 import { Controls } from './Controls';
-import { RoomIndicator } from './RoomIndicator';
+import { RoomTabs } from './RoomTabs';
 import { InstructionOverlay } from './InstructionOverlay';
 import { useStore } from '../state/Store';
 import { assetUrl } from '../types';
@@ -41,37 +40,51 @@ function GlobalDragLayer() {
 
 export function MainLayout() {
   return (
-    <div className="h-[100dvh] w-full flex flex-col overflow-hidden bg-background text-foreground font-sans selection:bg-foreground selection:text-background">
+    <div className="h-[100dvh] w-full relative overflow-hidden bg-black">
       <GlobalDragLayer />
-      <InstructionOverlay />
 
-      {/* Header */}
-      <header className="px-5 md:px-6 py-3 md:py-4 flex items-center justify-between shrink-0">
-        <div>
-          <h1 className="font-serif text-lg md:text-xl tracking-wide leading-none">
-            {branding.wordmark}
-          </h1>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-[0.22em] mt-1.5">
-            {branding.tagline}
-          </p>
-        </div>
-        <div className="text-[11px] tracking-[0.2em] border border-foreground/10 px-3 py-1.5 rounded-sm shrink-0">
-          {branding.shortMark}
-        </div>
-      </header>
+      {/* Room canvas fills the entire viewport */}
+      <div className="absolute inset-0">
+        <RoomCarousel />
+      </div>
 
-      {/* Room canvas — sized to whatever vertical space is left over so the
-          tray is always reachable without scrolling the page. */}
-      <main className="flex-1 min-h-0 w-full flex flex-col items-center px-3 md:px-8">
-        <div className="flex-1 min-h-0 w-full max-w-[1200px] flex items-center justify-center [container-type:size]">
-          <RoomCarousel />
-        </div>
-        <RoomIndicator />
-      </main>
+      {/* ── Top bar: room tabs centred, logo top-right ── */}
+      <div className="absolute top-0 left-0 right-0 z-20 flex items-start justify-between px-4 pt-4 pointer-events-none">
+        {/* Spacer matches logo width so tabs stay truly centred */}
+        <div className="w-32 shrink-0" />
 
-      {/* Controls and tray */}
-      <div className="shrink-0 bg-background/95 backdrop-blur-md border-t border-border">
-        <Controls />
+        <div className="pointer-events-auto">
+          <RoomTabs />
+        </div>
+
+        {/* Living Luxury Lab logo — white version */}
+        <div className="pointer-events-auto w-32 shrink-0 flex justify-end">
+          <img
+            src={assetUrl('l3-white-horizontal-logo.png')}
+            alt="Living Luxury Lab"
+            className="h-10 object-contain"
+            draggable={false}
+          />
+        </div>
+      </div>
+
+      {/* Subtle left-edge gradient so controls read against any room photo */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none"
+        style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.18) 0%, transparent 100%)' }}
+      />
+      {/* Subtle top gradient for the tab bar */}
+      <div
+        className="absolute top-0 left-0 right-0 h-24 z-10 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.22) 0%, transparent 100%)' }}
+      />
+
+      {/* ── Left floating controls: Undo + Clear room ── */}
+      <Controls />
+
+      {/* ── Bottom: first-use hint + inventory tray ── */}
+      <div className="absolute bottom-4 left-4 right-4 z-20 flex flex-col gap-2">
+        <InstructionOverlay />
         <InventoryTray />
       </div>
     </div>

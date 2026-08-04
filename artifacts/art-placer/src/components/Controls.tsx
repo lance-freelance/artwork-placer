@@ -1,78 +1,61 @@
 import { useStore } from '../state/Store';
-import { Undo2, RotateCcw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Undo2, RotateCcw } from 'lucide-react';
 import { ResetDialog } from './ResetDialog';
+import { cn } from '@/lib/utils';
 
+/**
+ * Floating left-side action panel — Undo and Clear room stacked vertically,
+ * matching the reference layout where controls sit over the room canvas.
+ */
 export function Controls() {
-  const { rooms, history, undo, resetRoom, resetAll, activeRoomId, setActiveRoomId } =
-    useStore();
+  const { rooms, history, undo, resetRoom, resetAll, activeRoomId } = useStore();
   const activeIndex = rooms.findIndex((r) => r.id === activeRoomId);
+  const buttonClass =
+    'flex flex-col items-center gap-1 w-12 h-12 rounded-xl bg-white/85 backdrop-blur-sm shadow-md hover:bg-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-30 disabled:cursor-not-allowed justify-center';
 
   return (
-    <div className="flex items-center justify-between w-full max-w-4xl mx-auto px-4 md:px-6 py-2">
-      {/* Room navigation */}
-      <div className="flex items-center gap-1 md:gap-3">
-        <button
-          className="p-2 rounded-full hover:bg-foreground/5 disabled:opacity-30 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          disabled={activeIndex === 0}
-          onClick={() => setActiveRoomId(rooms[activeIndex - 1].id)}
-          aria-label="Previous room"
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <div className="text-sm md:text-base tracking-wide font-serif w-24 md:w-32 text-center truncate">
-          {rooms[activeIndex].name}
-        </div>
-        <button
-          className="p-2 rounded-full hover:bg-foreground/5 disabled:opacity-30 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          disabled={activeIndex === rooms.length - 1}
-          onClick={() => setActiveRoomId(rooms[activeIndex + 1].id)}
-          aria-label="Next room"
-        >
-          <ChevronRight size={20} />
-        </button>
-      </div>
-
-      {/* Actions */}
-      <div className="flex items-center gap-1 md:gap-2">
+    <div className="absolute left-4 top-[28%] z-20 flex flex-col gap-3 items-center">
+      {/* Undo */}
+      <div className="flex flex-col items-center gap-1">
         <button
           onClick={undo}
           disabled={history.length === 0}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
+          className={buttonClass}
           aria-label={
             history.length > 1
               ? `Undo last action, ${history.length} available`
               : 'Undo last action'
           }
         >
-          <Undo2 size={16} />
-          <span className="hidden sm:inline">Undo</span>
-          {/* Undo steps back through the whole session, so say how far it reaches. */}
+          <Undo2 size={18} className="text-foreground" />
           {history.length > 1 && (
             <span
               aria-hidden="true"
-              className="text-[10px] tabular-nums leading-none px-1.5 py-0.5 rounded-full bg-foreground/8 text-muted-foreground"
+              className="absolute -top-1 -right-1 text-[9px] tabular-nums leading-none px-1 py-0.5 rounded-full bg-foreground text-background min-w-[16px] text-center"
             >
               {history.length}
             </span>
           )}
         </button>
+        <span className="text-[10px] text-white font-medium tracking-wide drop-shadow">Undo</span>
+      </div>
 
-        <div className="w-px h-4 bg-border mx-1 md:mx-2" />
-
+      {/* Clear room / Start over */}
+      <div className="flex flex-col items-center gap-1">
         <ResetDialog
-           roomName={rooms[activeIndex].name}
-           onResetRoom={() => resetRoom(activeRoomId)}
-           onResetAll={resetAll}
+          roomName={rooms[activeIndex]?.name ?? ''}
+          onResetRoom={() => resetRoom(activeRoomId)}
+          onResetAll={resetAll}
           trigger={
             <button
-              className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm"
-               aria-label="Clear room"
+              className={cn(buttonClass, 'relative')}
+              aria-label="Clear room"
             >
-              <RotateCcw size={16} />
-               <span className="hidden sm:inline">Clear room</span>
+              <RotateCcw size={18} className="text-foreground" />
             </button>
           }
         />
+        <span className="text-[10px] text-white font-medium tracking-wide drop-shadow">Reset</span>
       </div>
     </div>
   );

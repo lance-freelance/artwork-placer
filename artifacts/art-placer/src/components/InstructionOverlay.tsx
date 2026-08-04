@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
 
+/**
+ * First-use "Drag art into the room" hint.
+ * Sits above the tray in the bottom-left, matching the reference design.
+ * Dismissed on first interaction and remembered in localStorage.
+ */
 export function InstructionOverlay() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
     const seen = localStorage.getItem('lll-instructions-seen');
     if (!seen) {
-      const timer = setTimeout(() => setVisible(true), 1500);
+      const timer = setTimeout(() => setVisible(true), 1800);
       return () => clearTimeout(timer);
     }
     return undefined;
@@ -22,28 +26,24 @@ export function InstructionOverlay() {
   return (
     <AnimatePresence>
       {visible && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+        <motion.button
+          initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          className="fixed bottom-32 left-1/2 -translate-x-1/2 z-40 bg-foreground text-background px-6 py-4 rounded-sm shadow-xl flex items-center gap-4 max-w-sm w-[calc(100%-2rem)]"
+          exit={{ opacity: 0, y: 4 }}
+          transition={{ duration: 0.25 }}
+          onClick={dismiss}
+          className="self-start bg-white/90 backdrop-blur-sm text-foreground rounded-xl px-3.5 py-2.5 shadow-md text-left outline-none focus-visible:ring-2 focus-visible:ring-primary max-w-[160px]"
+          aria-label="Dismiss hint"
         >
-          <div className="text-sm">
-            <p className="font-medium">
-              Drag art to the walls. Sculptures go on the floor.
-            </p>
-            <p className="text-background/70 mt-1">
-              Or tap a piece, then tap where it should go.
-            </p>
-          </div>
-          <button 
-            onClick={dismiss}
-            className="p-1 hover:bg-background/20 rounded-full transition-colors shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-white"
-            aria-label="Dismiss instructions"
-          >
-            <X size={16} />
-          </button>
-        </motion.div>
+          <p className="text-[12px] font-medium leading-snug">
+            Drag art into the room
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-0.5 leading-snug">
+            Or tap to select, then tap to place
+          </p>
+          {/* Small decorative dot matching the reference arrow cue */}
+          <span className="block mt-1.5 w-1.5 h-1.5 rounded-full bg-destructive/80 mx-auto" aria-hidden="true" />
+        </motion.button>
       )}
     </AnimatePresence>
   );

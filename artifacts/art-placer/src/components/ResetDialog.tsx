@@ -42,9 +42,7 @@ export function ResetDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={onResetRoom}
-          >
+          <AlertDialogAction onClick={onResetRoom}>
             Clear this room
           </AlertDialogAction>
           <AlertDialogAction

@@ -2,6 +2,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { RoomCanvas } from './RoomCanvas';
 import { useStore } from '../state/Store';
 import { useEffect, useCallback } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export function RoomCarousel() {
   const { rooms, activeRoomId, setActiveRoomId } = useStore();
@@ -30,18 +31,41 @@ export function RoomCarousel() {
     return () => { emblaApi.off('select', onSelect); };
   }, [emblaApi, onSelect]);
 
+  const sideArrowClass =
+    'absolute top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-md hover:bg-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-0 disabled:pointer-events-none';
+
   return (
-    <div
-      className="overflow-hidden w-[min(100%,160cqh)] shadow-[0_18px_40px_-18px_rgba(60,50,40,0.45)] rounded-sm bg-muted"
-      ref={emblaRef}
-    >
-      <div className="flex touch-pan-y">
-        {rooms.map(room => (
-          <div key={room.id} className="flex-[0_0_100%] min-w-0 relative">
-            <RoomCanvas roomId={room.id} isActive={room.id === activeRoomId} />
-          </div>
-        ))}
+    <div className="relative w-full h-full">
+      {/* Left room-nav arrow — overlaid on the canvas, below the action controls */}
+      <button
+        className={`${sideArrowClass} left-4`}
+        disabled={activeIndex === 0}
+        onClick={() => setActiveRoomId(rooms[activeIndex - 1].id)}
+        aria-label="Previous room"
+      >
+        <ChevronLeft size={20} className="text-foreground" />
+      </button>
+
+      {/* Embla viewport — fills entire parent */}
+      <div className="overflow-hidden w-full h-full" ref={emblaRef}>
+        <div className="flex h-full touch-pan-y">
+          {rooms.map(room => (
+            <div key={room.id} className="flex-[0_0_100%] min-w-0 h-full relative">
+              <RoomCanvas roomId={room.id} isActive={room.id === activeRoomId} />
+            </div>
+          ))}
+        </div>
       </div>
+
+      {/* Right room-nav arrow */}
+      <button
+        className={`${sideArrowClass} right-16`}
+        disabled={activeIndex === rooms.length - 1}
+        onClick={() => setActiveRoomId(rooms[activeIndex + 1].id)}
+        aria-label="Next room"
+      >
+        <ChevronRight size={20} className="text-foreground" />
+      </button>
     </div>
   );
 }
