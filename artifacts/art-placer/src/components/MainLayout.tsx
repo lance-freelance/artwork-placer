@@ -82,8 +82,8 @@ export function MainLayout() {
       {/* ── Left floating controls: Undo + Clear room ── */}
       <Controls />
 
-      {/* ── Bottom: first-use hint + inventory tray ── */}
-      <div className="absolute bottom-4 left-4 right-4 z-20 flex flex-col gap-2">
+      {/* ── Bottom: first-use hint + inventory tray — 2/3 window width, centred ── */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex flex-col gap-2 w-2/3">
         <InstructionOverlay />
         <InventoryTray />
       </div>
