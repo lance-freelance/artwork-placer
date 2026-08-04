@@ -110,6 +110,35 @@ The listing route reads them from the filesystem. Adding a room upload route
 would follow the same pattern as art (GCS write + `/api/room-image/:filename`
 serve route), but that work has not been done.
 
+## Verification uploads are user-visible content — clean both stores
+
+An upload written while testing the pipeline lands in *two* places (object
+storage and `public/art/`) and immediately appears in the admin's "pick an image
+already in the art folder" picker. A tiny placeholder image written to prove the
+plumbing works therefore shows up to the user as a real, broken-looking artwork.
+
+**Why:** the picker is driven by `listMediaFiles()`, which merges both stores and
+has no notion of which files are catalog-backed. Having no art record keeps a
+file off the board, but not out of the picker — that was assumed once and was
+wrong; the user reported the leftover as a "1x1 pixel image" bug.
+
+**How to apply:** either upload a real, plausibly-sized image when verifying, or
+delete the test artifact from GCS *and* the filesystem before finishing. Checking
+only `ls public/art/` is not enough; object storage keeps its own copy.
+
+## The upload filename is captured when the file is picked, not on save
+
+`baseName` is read from the Name field at the moment the file is chosen, so
+picking a file mid-typing bakes the half-typed name into the stored filename.
+
+**Why:** the pair of images is written immediately on selection rather than
+deferred to form submit, so there is no later point at which the finished name
+could be applied. Renaming afterwards would mean moving objects in two stores.
+
+**How to apply:** treat a truncated-looking stored filename as this ordering
+quirk, not as a slug-length bug — `safeStem` caps at 60 characters, far above
+what a typical title produces.
+
 ## Testing agents mistake a rejected drop for a lost placement
 
 A drop in the wrong band leaves the piece exactly where it already was, so the
