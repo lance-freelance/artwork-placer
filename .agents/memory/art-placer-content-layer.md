@@ -73,6 +73,43 @@ returns PNG instead of failing, so the stored extension has to follow what was
 actually produced. Filenames must be derived server-side from a slugified stem;
 a name typed by a human is untrusted path input.
 
+## Art images are served through the API, never as static assets
+
+All art images (seeded and uploaded) go through `GET /api/art-image/:filename`.
+The client uses `artImageUrl(filename)` from `src/types.ts` — never
+`assetUrl('art/...')`. The route checks object storage first (uploads), then the
+seeded filesystem copies.
+
+Uploaded images are written to GCS via `@google-cloud/storage` inside
+`artifacts/api-server/src/lib/media.ts` (`saveArtImages`). The bucket ID is in
+`DEFAULT_OBJECT_STORAGE_BUCKET_ID`. A convenience copy is also written to the
+local filesystem so the dev Vite server can serve it immediately.
+
+`listMediaFiles()` merges filesystem names (seeded) with GCS names (uploaded);
+`streamArtImage(filename)` tries GCS first, then filesystem.
+
+**Why:** uploaded files go to object storage, not `public/art/`, because the
+production build bakes static files at deploy time — a file written to the
+source tree after the build is invisible to the running app. Object storage
+survives deploys and is accessible to the running server regardless of when the
+file was uploaded.
+
+**Why artImageUrl not assetUrl:** `assetUrl` builds a static URL relative to
+the Vite base path. That only works for files baked into the build. A single URL
+scheme through the API works for both seeded and uploaded files with no
+client-side branching.
+
+**How to apply:** any new image type added to the admin panel (e.g. room photos
+with an upload route) must follow the same pattern: write to GCS, serve via an
+API route, expose a dedicated URL helper in `src/types.ts`.
+
+## Rooms have no upload route — filesystem only
+
+Room photos are placed manually in `public/rooms/`. There is no `POST /api/media/room`.
+The listing route reads them from the filesystem. Adding a room upload route
+would follow the same pattern as art (GCS write + `/api/room-image/:filename`
+serve route), but that work has not been done.
+
 ## Testing agents mistake a rejected drop for a lost placement
 
 A drop in the wrong band leaves the piece exactly where it already was, so the

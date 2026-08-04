@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/card';
 import { Plus, Trash2, Loader2, Image as ImageIcon } from 'lucide-react';
 import { ArtForm } from './ArtForm';
 import { DeleteDialog } from './DeleteDialog';
-import { assetUrl } from '@/types';
+import { artImageUrl } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 
@@ -86,7 +86,7 @@ export function ArtManager() {
                 >
                   <div className="w-24 h-full bg-muted/50 border-r border-border flex items-center justify-center p-2 relative shrink-0">
                     <img 
-                      src={assetUrl(`art/${item.thumbnailFilename}`)} 
+                      src={artImageUrl(item.thumbnailFilename)} 
                       alt={item.name} 
                       className="max-w-full max-h-full object-contain drop-shadow-md"
                     />

@@ -3,7 +3,7 @@ import { useStore } from '../state/Store';
 import { usePointerDrag } from '../hooks/usePointerDrag';
 import { cn } from '@/lib/utils';
 import { resolveDrop, type DragGeometry } from '@/lib/placement';
-import { assetUrl } from '../types';
+import { artImageUrl } from '../types';
 
 /**
  * A single draggable thumbnail in the inventory tray. Pull it out to place it,
@@ -102,7 +102,7 @@ export function TrayItem({ objectId }: { objectId: string }) {
       }
     >
       <img
-        src={assetUrl(`art/${obj.thumbnailFilename}`)}
+        src={artImageUrl(obj.thumbnailFilename)}
         alt=""
         draggable={false}
         className="w-full h-full object-contain pointer-events-none drop-shadow-[0_4px_6px_rgba(60,50,40,0.18)]"

@@ -7,7 +7,7 @@ import { Controls } from './Controls';
 import { RoomTabs } from './RoomTabs';
 import { InstructionOverlay } from './InstructionOverlay';
 import { useStore } from '../state/Store';
-import { assetUrl } from '../types';
+import { artImageUrl, assetUrl } from '../types';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useMeasuredHeight } from '../hooks/useMeasuredHeight';
 
@@ -93,7 +93,7 @@ function GlobalDragLayer() {
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
     >
       <img
-        src={assetUrl(`art/${obj.fullImageFilename}`)}
+        src={artImageUrl(obj.fullImageFilename)}
         alt=""
         draggable={false}
         className="w-full h-full object-contain drop-shadow-[0_22px_28px_rgba(50,40,30,0.32)]"

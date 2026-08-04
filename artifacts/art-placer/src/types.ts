@@ -21,3 +21,18 @@ export type {
 export function assetUrl(path: string): string {
   return `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`;
 }
+
+/**
+ * Resolve an art image filename to the API serving route.
+ *
+ * Art images are served through the API server rather than as static assets
+ * so that uploaded images are accessible in both dev and production. The
+ * route checks object storage first (uploads), then falls back to seeded
+ * files on the filesystem.
+ *
+ * Use this for every `<img>` that displays an ArtObject's fullImageFilename
+ * or thumbnailFilename. Do NOT use `assetUrl('art/...')` for art images.
+ */
+export function artImageUrl(filename: string): string {
+  return `/api/art-image/${filename}`;
+}

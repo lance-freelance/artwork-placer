@@ -43,7 +43,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, Upload, Wand2 } from 'lucide-react';
-import { assetUrl } from '@/types';
+import { artImageUrl } from '@/types';
 import { Badge } from '@/components/ui/badge';
 
 const artSchema = z.object({
@@ -252,7 +252,7 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
     setImageError(null);
     setImageFilenames(filename, findThumbnailFor(filename, media?.art ?? []));
     try {
-      applyAspectRatio(await loadImage(assetUrl(`art/${filename}`)));
+      applyAspectRatio(await loadImage(artImageUrl(filename)));
     } catch {
       // Leave the ratio alone; it stays editable by hand.
     }
@@ -369,7 +369,7 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
                   <figure className="min-w-0">
                     <div className="h-28 bg-muted rounded-md overflow-hidden border border-border shadow-sm inline-flex items-center justify-center px-2">
                       <img
-                        src={assetUrl(`art/${fullImageFilename}`)}
+                        src={artImageUrl(fullImageFilename)}
                         className="h-full w-auto object-contain"
                         alt="The artwork as placed in a room"
                       />
@@ -383,7 +383,7 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
                   <figure>
                     <div className="w-20 h-20 bg-muted rounded-md overflow-hidden border border-border shadow-sm flex items-center justify-center">
                       <img
-                        src={assetUrl(`art/${thumbnailFilename}`)}
+                        src={artImageUrl(thumbnailFilename)}
                         className="w-full h-full object-contain"
                         alt="The generated tray thumbnail"
                       />

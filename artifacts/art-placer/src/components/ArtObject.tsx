@@ -4,7 +4,7 @@ import { useStore } from '../state/Store';
 import { usePointerDrag } from '../hooks/usePointerDrag';
 import { cn } from '@/lib/utils';
 import { resolveDrop, type DragGeometry } from '@/lib/placement';
-import { assetUrl, type Placement } from '../types';
+import { artImageUrl, assetUrl, type Placement } from '../types';
 
 /**
  * A single object placed inside a room. Dragging it repositions it freeform
@@ -93,7 +93,7 @@ export function ArtObject({ placement }: { placement: Placement }) {
       }}
     >
       <img
-        src={assetUrl(`art/${obj.fullImageFilename}`)}
+        src={artImageUrl(obj.fullImageFilename)}
         alt={obj.name}
         draggable={false}
         className="w-full h-full object-contain pointer-events-none drop-shadow-[0_6px_10px_rgba(60,50,40,0.22)] group-hover:drop-shadow-[0_12px_18px_rgba(60,50,40,0.28)] transition-[filter] duration-300"
