@@ -49,7 +49,20 @@ export function RoomCanvas({ roomId, isActive }: { roomId: string, isActive: boo
         isActive ? "opacity-100" : "opacity-0 pointer-events-none"
       )}
     >
-      <img src={assetUrl(`rooms/${room.imageFilename}`)} alt={room.name} className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+      {/*
+        `object-contain` is required, not cosmetic: the canvas box is a fixed
+        16:10 matte and the room photographs are 16:10, so contain fills it
+        exactly with no crop and no stretch-scaling. Switching this back to
+        `cover` would distort the photo on off-ratio boxes and silently move
+        every placement, because placements are stored as percentages of this
+        box.
+      */}
+      <img
+        src={assetUrl(`rooms/${room.imageFilename}`)}
+        alt={room.name}
+        draggable={false}
+        className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none"
+      />
       
       {/* Placements */}
       {roomPlacements.map(p => (

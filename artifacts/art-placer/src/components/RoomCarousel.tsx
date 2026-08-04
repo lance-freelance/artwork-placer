@@ -2,8 +2,15 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { RoomCanvas } from './RoomCanvas';
 import { useStore } from '../state/Store';
 import { useEffect, useCallback } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 
+/**
+ * Holds the room slides. This component fills the matted canvas box supplied
+ * by MainLayout — it does not size itself against the viewport, so every
+ * measurement taken inside a slide is canvas-relative.
+ *
+ * The prev/next chevrons deliberately live outside this component (see
+ * RoomNavArrows) so they can be positioned against the viewport matte.
+ */
 export function RoomCarousel() {
   const { rooms, activeRoomId, setActiveRoomId } = useStore();
   // `watchDrag: false` is deliberate: rooms change only through the prev/next
@@ -31,22 +38,13 @@ export function RoomCarousel() {
     return () => { emblaApi.off('select', onSelect); };
   }, [emblaApi, onSelect]);
 
-  const sideArrowClass =
-    'absolute top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-md hover:bg-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-35 disabled:cursor-not-allowed';
+  // No manual resize handling here: the canvas box resizes with the matte, and
+  // Embla's own `watchResize` (on by default) observes the root node and
+  // re-measures slide offsets for us.
 
   return (
     <div className="relative w-full h-full">
-      {/* Left room-nav arrow — stays visible but fades at the first room */}
-      <button
-        className={`${sideArrowClass} left-16`}
-        disabled={activeIndex === 0}
-        onClick={() => setActiveRoomId(rooms[activeIndex - 1].id)}
-        aria-label="Previous room"
-      >
-        <ChevronLeft size={20} className="text-foreground" />
-      </button>
-
-      {/* Embla viewport — fills entire parent */}
+      {/* Embla viewport — fills the matted canvas box */}
       <div className="overflow-hidden w-full h-full" ref={emblaRef}>
         <div className="flex h-full touch-pan-y">
           {rooms.map(room => (
@@ -56,16 +54,6 @@ export function RoomCarousel() {
           ))}
         </div>
       </div>
-
-      {/* Right room-nav arrow */}
-      <button
-        className={`${sideArrowClass} right-16`}
-        disabled={activeIndex === rooms.length - 1}
-        onClick={() => setActiveRoomId(rooms[activeIndex + 1].id)}
-        aria-label="Next room"
-      >
-        <ChevronRight size={20} className="text-foreground" />
-      </button>
     </div>
   );
 }

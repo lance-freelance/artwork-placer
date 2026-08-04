@@ -40,7 +40,13 @@ export function Controls() {
     '[text-shadow:0_1px_3px_rgba(0,0,0,0.9),0_0_5px_rgba(0,0,0,0.55)]';
 
   return (
-    <div className="absolute left-4 top-[18%] z-20 flex flex-col items-center ml-[45px] mr-[45px]">
+    // Pinned to the left matte gutter and centred inside it, so the stack
+    // tracks the matte instead of the viewport edge and can never ride up onto
+    // the room photograph on width-constrained windows.
+    <div
+      className="absolute left-0 top-[18%] z-20 flex flex-col items-center"
+      style={{ width: 'var(--matte-x)' }}
+    >
       {/* ── Undo ── */}
       <div className="relative flex flex-col items-center">
         <button

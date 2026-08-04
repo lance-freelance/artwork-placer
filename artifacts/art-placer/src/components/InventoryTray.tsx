@@ -4,8 +4,9 @@ import { TrayItem } from './TrayItem';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 /**
- * Floating art inventory tray at the bottom of the canvas.
- * Styled as a warm rounded capsule matching the reference design.
+ * Floating art inventory tray. Positioned against the viewport (not the room
+ * canvas) so it sits on the bottom matte — see the matte insets in MainLayout,
+ * whose bottom floor is sized to keep this capsule clear of the photograph.
  */
 export function InventoryTray() {
   const { artObjects } = useStore();
