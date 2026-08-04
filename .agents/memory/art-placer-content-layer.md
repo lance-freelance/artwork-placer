@@ -73,6 +73,23 @@ returns PNG instead of failing, so the stored extension has to follow what was
 actually produced. Filenames must be derived server-side from a slugified stem;
 a name typed by a human is untrusted path input.
 
+
+## Art images are served by the API, never by static hosting
+
+The board's static host is a SPA with a catch-all: a missing image returns
+`index.html` with a 200, so brokenness is invisible to status codes. Art images
+therefore load from an API route that reads the same directory uploads are
+written to, 404s honestly, and serves fresh uploads in production without a
+rebuild. The admin panel loads each just-saved file back and decodes it before
+declaring an upload successful.
+
+**Why:** an upload once "succeeded" at every layer while the file was never
+viewable; decode-on-read is the only trustworthy check under a SPA fallback.
+
+**How to apply:** new image kinds should get the same API-served treatment as
+art. Never verify an asset by HTTP status alone in this app. The health
+endpoint is `/api/healthz`, not `/api/health`.
+
 ## Art images are served through the API, never as static assets
 
 All art images (seeded and uploaded) go through `GET /api/art-image/:filename`.

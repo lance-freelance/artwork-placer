@@ -4,7 +4,7 @@ import { useStore } from '../state/Store';
 import { usePointerDrag } from '../hooks/usePointerDrag';
 import { cn } from '@/lib/utils';
 import { resolveDrop, type DragGeometry } from '@/lib/placement';
-import { artImageUrl, assetUrl, type Placement } from '../types';
+import { artImageUrl, type Placement } from '../types';
 
 /**
  * A single object placed inside a room. Dragging it repositions it freeform

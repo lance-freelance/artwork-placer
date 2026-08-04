@@ -21,6 +21,7 @@ import {
   loadImage,
   readFileAsDataUrl,
   THUMBNAIL_MAX_EDGE,
+  verifyImageAsset,
 } from './imageTools';
 
 import {
@@ -42,7 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Upload, Wand2 } from 'lucide-react';
+import { ImageOff, Loader2, Upload, Wand2 } from 'lucide-react';
 import { artImageUrl } from '@/types';
 import { Badge } from '@/components/ui/badge';
 
@@ -81,6 +82,21 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
   const [autoDetectedRatio, setAutoDetectedRatio] = useState(false);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  /**
+   * Filenames whose preview <img> failed to load. A listed image that cannot
+   * be fetched back is exactly the silent failure this form exists to catch —
+   * so it's shown, not swallowed.
+   */
+  const [brokenPreviews, setBrokenPreviews] = useState<Set<string>>(new Set());
+  const markPreview = (filename: string, broken: boolean) => {
+    setBrokenPreviews((prev) => {
+      if (prev.has(filename) === broken) return prev;
+      const next = new Set(prev);
+      if (broken) next.add(filename);
+      else next.delete(filename);
+      return next;
+    });
+  };
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadImage = useUploadArtImage();
 
@@ -115,6 +131,7 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
     imageOpRef.current += 1;
     setIsProcessingImage(false);
     setImageError(null);
+    setBrokenPreviews(new Set());
 
     if (art) {
       form.reset({
@@ -229,12 +246,31 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
       // form's business, so nothing is set and nothing is announced.
       if (!current()) return;
 
+      // A 201 is only the server's word for it. Load both saved files back
+      // and make sure each decodes as an image — that round trip is the only
+      // reliable proof the save worked.
+      await Promise.all([
+        verifyImageAsset(artImageUrl(saved.fullImageFilename)),
+        verifyImageAsset(artImageUrl(saved.thumbnailFilename)),
+      ]);
+      if (!current()) return;
+
       setImageFilenames(saved.fullImageFilename, saved.thumbnailFilename);
       queryClient.invalidateQueries({ queryKey: getListMediaQueryKey() });
-      toast({
-        title: 'Image saved',
-        description: `Thumbnail generated at ${THUMBNAIL_MAX_EDGE}px · aspect ratio ${ratio}`,
-      });
+      if (saved.renamedFrom) {
+        toast({
+          title: 'Saved under a new name',
+          description:
+            `An image named ${saved.renamedFrom} already exists, so this one ` +
+            `was saved as ${saved.fullImageFilename}. If this is the same ` +
+            `artwork uploaded twice, pick the existing image instead.`,
+        });
+      } else {
+        toast({
+          title: 'Image saved',
+          description: `Thumbnail generated at ${THUMBNAIL_MAX_EDGE}px · aspect ratio ${ratio}`,
+        });
+      }
     } catch (err: any) {
       if (!current()) return;
       const message = err?.data?.error || err?.message || 'The image could not be saved.';
@@ -368,11 +404,25 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
                 {fullImageFilename && (
                   <figure className="min-w-0">
                     <div className="h-28 bg-muted rounded-md overflow-hidden border border-border shadow-sm inline-flex items-center justify-center px-2">
-                      <img
-                        src={artImageUrl(fullImageFilename)}
-                        className="h-full w-auto object-contain"
-                        alt="The artwork as placed in a room"
-                      />
+                      {brokenPreviews.has(fullImageFilename) ? (
+                        <div
+                          className="flex flex-col items-center gap-1 text-destructive px-4"
+                          data-testid="preview-full-image-broken"
+                        >
+                          <ImageOff className="w-6 h-6" />
+                          <span className="text-[11px] leading-tight text-center">
+                            Image missing — this file can't be loaded
+                          </span>
+                        </div>
+                      ) : (
+                        <img
+                          src={artImageUrl(fullImageFilename)}
+                          className="h-full w-auto object-contain"
+                          alt="The artwork as placed in a room"
+                          onError={() => markPreview(fullImageFilename, true)}
+                          onLoad={() => markPreview(fullImageFilename, false)}
+                        />
+                      )}
                     </div>
                     <figcaption className="text-[11px] text-muted-foreground mt-1.5 truncate">
                       {fullImageFilename}
@@ -382,11 +432,25 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
                 {thumbnailFilename && (
                   <figure>
                     <div className="w-20 h-20 bg-muted rounded-md overflow-hidden border border-border shadow-sm flex items-center justify-center">
-                      <img
-                        src={artImageUrl(thumbnailFilename)}
-                        className="w-full h-full object-contain"
-                        alt="The generated tray thumbnail"
-                      />
+                      {brokenPreviews.has(thumbnailFilename) ? (
+                        <div
+                          className="flex flex-col items-center gap-1 text-destructive px-1"
+                          data-testid="preview-thumbnail-broken"
+                        >
+                          <ImageOff className="w-5 h-5" />
+                          <span className="text-[10px] leading-tight text-center">
+                            Missing
+                          </span>
+                        </div>
+                      ) : (
+                        <img
+                          src={artImageUrl(thumbnailFilename)}
+                          className="w-full h-full object-contain"
+                          alt="The generated tray thumbnail"
+                          onError={() => markPreview(thumbnailFilename, true)}
+                          onLoad={() => markPreview(thumbnailFilename, false)}
+                        />
+                      )}
                     </div>
                     <figcaption className="text-[11px] text-muted-foreground mt-1.5 flex items-center gap-1">
                       <Wand2 className="w-3 h-3 shrink-0" />

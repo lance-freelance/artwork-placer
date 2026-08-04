@@ -81,6 +81,38 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /art-image/{filename}:
+    get:
+      operationId: getArtImage
+      tags: [media]
+      summary: Serve an art image file
+      description: >
+        Returns the image bytes, checking object storage first (uploads) and
+        the seeded filesystem copies second. The SPA's static hosting answers
+        every URL with `index.html` and a 200, so it cannot distinguish a
+        missing image from a present one; this route genuinely 404s, and
+        serves fresh uploads in production without waiting for a rebuild.
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The image bytes
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: No such art image
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /rooms:
     get:
       operationId: listRooms
@@ -375,6 +407,13 @@ components:
         fullImageFilename:
           type: string
         thumbnailFilename:
+          type: string
+        renamedFrom:
+          description: >
+            Present when the requested name was already taken and the files
+            were saved under a suffixed name instead. Holds the filename the
+            upload would have had, so the client can point out the likely
+            duplicate rather than letting a `-2` copy appear silently.
           type: string
       required:
         - fullImageFilename

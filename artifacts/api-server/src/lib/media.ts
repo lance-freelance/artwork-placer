@@ -290,7 +290,11 @@ export async function saveArtImages(input: {
   baseName: string;
   fullImage: string;
   thumbnail: string;
-}): Promise<{ fullImageFilename: string; thumbnailFilename: string }> {
+}): Promise<{
+  fullImageFilename: string;
+  thumbnailFilename: string;
+  renamedFrom?: string;
+}> {
   const full = decodeDataUrl(input.fullImage, "The image");
   const thumb = decodeDataUrl(input.thumbnail, "The thumbnail");
 
@@ -357,5 +361,14 @@ export async function saveArtImages(input: {
     // Non-fatal: the GCS copy is what counts in production.
   }
 
-  return { fullImageFilename, thumbnailFilename };
+  // A suffixed stem almost always means the same piece was uploaded twice.
+  // The rename is reported so the client can say so, instead of a `-2` copy
+  // appearing with no explanation.
+  return {
+    fullImageFilename,
+    thumbnailFilename,
+    ...(stem !== wanted
+      ? { renamedFrom: `${wanted}.${full.extension}` }
+      : {}),
+  };
 }

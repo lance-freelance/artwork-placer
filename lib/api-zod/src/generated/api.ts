@@ -42,8 +42,20 @@ export const UploadArtImageBody = zod.object({
 
 export const UploadArtImageResponse = zod.object({
   "fullImageFilename": zod.string(),
-  "thumbnailFilename": zod.string()
+  "thumbnailFilename": zod.string(),
+  "renamedFrom": zod.string().optional().describe('Present when the requested name was already taken and the files were saved under a suffixed name instead. Holds the filename the upload would have had, so the client can point out the likely duplicate rather than letting a `-2` copy appear silently.\n')
 })
+
+
+/**
+ * Returns the image bytes, checking object storage first (uploads) and the seeded filesystem copies second. The SPA's static hosting answers every URL with `index.html` and a 200, so it cannot distinguish a missing image from a present one; this route genuinely 404s, and serves fresh uploads in production without waiting for a rebuild.
+ * @summary Serve an art image file
+ */
+export const GetArtImageParams = zod.object({
+  "filename": zod.coerce.string()
+})
+
+export const GetArtImageResponse = zod.unknown()
 
 
 /**

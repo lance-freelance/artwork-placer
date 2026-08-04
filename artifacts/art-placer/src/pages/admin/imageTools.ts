@@ -60,6 +60,27 @@ export function generateThumbnail(
   return canvas.toDataURL('image/webp', 0.86);
 }
 
+/**
+ * Confirms a just-saved asset really comes back as an image.
+ *
+ * The app is a SPA with a catch-all route, so a missing file is served as
+ * `index.html` with a 200 — the status code proves nothing. Decoding is the
+ * test: HTML will not decode as an image, so a broken save fails here loudly
+ * instead of much later. The cache-buster makes sure the check hits the
+ * server rather than a cached copy.
+ */
+export async function verifyImageAsset(url: string): Promise<void> {
+  const bust = `${url}${url.includes('?') ? '&' : '?'}v=${Date.now()}`;
+  try {
+    await loadImage(bust);
+  } catch {
+    throw new Error(
+      'The server reported the image as saved, but it cannot be loaded back. ' +
+        'It was most likely not written where the app serves images from.',
+    );
+  }
+}
+
 /** `Ink Study (Oversized).png` becomes `ink-study-oversized`. */
 export function fileStem(filename: string): string {
   return filename.replace(/\.[^.]+$/, '');

@@ -290,6 +290,84 @@ export const useUploadArtImage = <TError = ErrorType<ErrorResponse>,
       return useMutation(getUploadArtImageMutationOptions(options));
     }
 
+export const getGetArtImageUrl = (filename: string,) => {
+
+
+
+
+  return `/api/art-image/${filename}`
+}
+
+/**
+ * Returns the image bytes, checking object storage first (uploads) and the seeded filesystem copies second. The SPA's static hosting answers every URL with `index.html` and a 200, so it cannot distinguish a missing image from a present one; this route genuinely 404s, and serves fresh uploads in production without waiting for a rebuild.
+ * @summary Serve an art image file
+ */
+export const getArtImage = async (filename: string, options?: Parameters<typeof customFetch>[1]): Promise<Blob> => {
+
+  return customFetch<Blob>(getGetArtImageUrl(filename),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetArtImageQueryKey = (filename: string,) => {
+    return [
+    `/api/art-image/${filename}`
+    ] as const;
+    }
+
+
+export const getGetArtImageQueryOptions = <TData = Awaited<ReturnType<typeof getArtImage>>, TError = ErrorType<ErrorResponse>>(filename: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getArtImage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetArtImageQueryKey(filename);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getArtImage>>> = ({ signal }) => getArtImage(filename, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: filename !== null && filename !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getArtImage>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetArtImageQueryResult = NonNullable<Awaited<ReturnType<typeof getArtImage>>>
+export type GetArtImageQueryError = ErrorType<ErrorResponse>
+
+
+/**
+ * @summary Serve an art image file
+ */
+
+export function useGetArtImage<TData = Awaited<ReturnType<typeof getArtImage>>, TError = ErrorType<ErrorResponse>>(
+ filename: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getArtImage>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetArtImageQueryOptions(filename,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
 export const getListRoomsUrl = () => {
 
 
