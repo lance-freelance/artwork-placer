@@ -32,10 +32,20 @@ export function RoomCarousel() {
   }, [emblaApi, onSelect]);
 
   const sideArrowClass =
-    'absolute top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-md hover:bg-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-0 disabled:pointer-events-none';
+    'absolute top-1/2 -translate-y-1/2 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-md hover:bg-white transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white disabled:opacity-35 disabled:cursor-not-allowed';
 
   return (
     <div className="relative w-full h-full">
+      {/* Left room-nav arrow — stays visible but fades at the first room */}
+      <button
+        className={`${sideArrowClass} left-16`}
+        disabled={activeIndex === 0}
+        onClick={() => setActiveRoomId(rooms[activeIndex - 1].id)}
+        aria-label="Previous room"
+      >
+        <ChevronLeft size={20} className="text-foreground" />
+      </button>
+
       {/* Embla viewport — fills entire parent */}
       <div className="overflow-hidden w-full h-full" ref={emblaRef}>
         <div className="flex h-full touch-pan-y">

@@ -1,17 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../state/Store';
-import { Undo2, RotateCcw, ChevronLeft } from 'lucide-react';
+import { Undo2, RotateCcw } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 /**
- * Left floating column: Undo → Reset (with inline popover) → large gap → prev-room arrow.
- * The left carousel arrow is owned here so spacing is controlled in one place.
+ * Left floating column: Undo → Reset (with inline popover).
+ * Room navigation arrows live with the carousel so they stay vertically aligned.
  */
 export function Controls() {
-  const { rooms, history, undo, resetRoom, resetAll, activeRoomId, setActiveRoomId } =
+  const { rooms, history, undo, resetRoom, resetAll, activeRoomId } =
     useStore();
-  const activeIndex = rooms.findIndex((r) => r.id === activeRoomId);
 
   const [resetOpen, setResetOpen] = useState(false);
   const resetRef = useRef<HTMLDivElement>(null);
@@ -112,20 +111,6 @@ export function Controls() {
           )}
         </AnimatePresence>
       </div>
-      {/* Large gap before the room-nav arrow */}
-      <div className="h-10" />
-      {/* ── Previous-room arrow — slightly smaller than action buttons, matching the right arrow ── */}
-      <button
-        className={cn(
-          'w-10 h-10 rounded-full bg-secondary/90 backdrop-blur-sm shadow-md hover:bg-secondary transition-colors outline-none focus-visible:ring-2 focus-visible:ring-white flex items-center justify-center',
-          activeIndex === 0 && 'opacity-0 pointer-events-none',
-        )}
-        disabled={activeIndex === 0}
-        onClick={() => setActiveRoomId(rooms[activeIndex - 1].id)}
-        aria-label="Previous room"
-      >
-        <ChevronLeft size={20} className="text-foreground" />
-      </button>
     </div>
   );
 }
