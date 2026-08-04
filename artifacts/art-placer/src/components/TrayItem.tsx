@@ -88,13 +88,7 @@ export function TrayItem({ objectId }: { objectId: string }) {
         if (dragging()) return;
         setSelectedObjectId(isSelected ? null : objectId);
       }}
-      className={cn(
-        'relative shrink-0 cursor-grab active:cursor-grabbing rounded-sm transition-transform duration-200 outline-none',
-        'hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-        isDragging && 'opacity-0',
-        isSelected &&
-          'ring-2 ring-foreground ring-offset-4 ring-offset-background -translate-y-1',
-      )}
+      className="relative shrink-0 cursor-grab active:cursor-grabbing rounded-sm transition-transform duration-200 outline-none hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ml-[14px] mr-[14px]"
       style={{
         height: 'clamp(56px, 9vh, 84px)',
         aspectRatio: obj.aspectRatio,

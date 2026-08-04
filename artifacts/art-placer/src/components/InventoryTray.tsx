@@ -27,18 +27,16 @@ export function InventoryTray() {
       >
         <ChevronLeft size={20} strokeWidth={1.5} />
       </button>
-
       <div
         ref={scrollRef}
-        className="flex gap-5 overflow-x-auto snap-x snap-mandatory hide-scrollbar items-center min-h-[90px]"
+        className="flex gap-5 overflow-x-auto snap-x snap-mandatory hide-scrollbar items-center min-h-[90px] pl-[21px] pr-[21px]"
       >
         {artObjects.map(obj => (
-          <div key={obj.id} className="snap-start shrink-0 flex items-center justify-center">
+          <div key={obj.id} className="snap-start shrink-0 flex items-center justify-center ml-[9px] mr-[9px]">
             <TrayItem objectId={obj.id} />
           </div>
         ))}
       </div>
-
       <button
         onClick={() => scrollBy(220)}
         className={`${arrowClass} right-1.5`}
