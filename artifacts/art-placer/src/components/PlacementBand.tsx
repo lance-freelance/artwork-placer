@@ -3,6 +3,7 @@ import { useStore } from '../state/Store';
 import { artObjects } from '../data/objects';
 import { Room } from '../types';
 import { cn } from '@/lib/utils';
+import { clampToCanvas, isValidBand } from '@/lib/placement';
 
 export function PlacementBand({ room, canvasRef }: { room: Room, canvasRef: React.RefObject<HTMLDivElement | null> }) {
   const { dragState, selectedObjectId, placeObject, setSelectedObjectId } = useStore();
@@ -31,7 +32,7 @@ export function PlacementBand({ room, canvasRef }: { room: Room, canvasRef: Reac
     const objectCenterY = dragState.clientY - dragState.offsetY + dragState.height / 2;
     
     const pctY = ((objectCenterY - rect.top) / rect.height) * 100;
-    const isOverValid = activeObject.type === 'wall' ? pctY < room.bandSplit : pctY >= room.bandSplit;
+    const isOverValid = isValidBand(activeObject.type, pctY, room.bandSplit);
     
     if (isOverValid) {
       setCrosshairPos({ x: objectCenterX - rect.left, y: objectCenterY - rect.top });
@@ -47,14 +48,16 @@ export function PlacementBand({ room, canvasRef }: { room: Room, canvasRef: Reac
 
     const rect = canvasRef.current.getBoundingClientRect();
     // Center it on the click
-    const pctX = ((e.clientX - rect.left) / rect.width) * 100;
-    const pctY = ((e.clientY - rect.top) / rect.height) * 100;
+    const { x, y } = clampToCanvas(
+      ((e.clientX - rect.left) / rect.width) * 100,
+      ((e.clientY - rect.top) / rect.height) * 100,
+    );
 
     placeObject({
       objectId: obj.id,
       roomId: room.id,
-      x: pctX,
-      y: pctY,
+      x,
+      y,
       scale: obj.defaultScale,
       band: obj.type
     });

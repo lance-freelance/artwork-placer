@@ -33,13 +33,15 @@ A touch-first "digital felt board" where you drag framed artwork and sculptures 
 - **Placement validity is a single Y comparison.** Each room has one `bandSplit` (a % of canvas height): wall art must land above it, sculptures below. No zones, polygons, or hit regions.
 - **Pointer Events only, never HTML5 drag-and-drop.** `usePointerDrag` captures the pointer and sets `touch-action`, which is what makes the same code work for mouse and touch.
 - **The crosshair is a readability aid, not magnetism.** Objects settle exactly where released; nothing snaps or nudges.
-- **Coordinates are percentages of the canvas box**, so placements survive any resize and every screen size.
+- **Coordinates are percentages of the canvas box**, so placements survive any resize and every screen size. Drops are clamped so an object's anchor stays inside the frame — the pointer can be over the canvas while the object's centre is not, and an object centred outside the frame is clipped and impossible to grab again.
+- **The carousel is not draggable** (`watchDrag: false`). A swipeable carousel binds its own native pointer handlers to the container and steals the pointer mid-placement, stranding the piece being dragged. Rooms change through the controls and dots only.
+- **Object scales are calibrated against the furniture in the room photographs** — a full canvas width reads as roughly 4.2m of room, so 1m ≈ 0.24 of canvas width. Each entry in `src/data/objects.ts` notes the real-world size it is meant to suggest.
 - **State is deliberately in memory**, but shaped as a flat `Placement[]` so a persistence layer can be dropped in for Phase 2 without touching components.
 - **The dragged object renders in a fixed-position layer at the document root**, so it can travel between the tray and the room without either container clipping it.
 
 ## Product
 
-- Four rooms in a swipeable carousel, one visible at a time, with prev/next controls and a dot indicator that marks which rooms already hold art.
+- Four rooms in a carousel, one visible at a time, changed with prev/next controls and a dot indicator that marks which rooms already hold art.
 - A persistent bottom tray of eight unique pieces (six wall works, two sculptures) that scrolls horizontally and has chevrons at each end.
 - Drag a piece into a room to place it; the valid band lights up and the invalid one dims. Release in the wrong band and it returns where it came from.
 - Placed pieces can be repositioned, returned to the tray, or cleared with single-step undo, reset-this-room, and clear-all (both resets confirm first).

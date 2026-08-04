@@ -1,8 +1,12 @@
 # Living Luxury Lab — Art Placer
 
-A responsive, touch-first single-page app that works like a digital felt board: swipe
+A responsive, touch-first single-page app that works like a digital felt board: move
 through a carousel of rooms and drag framed artworks and sculptures onto the walls and
 floor.
+
+Note: the carousel is deliberately **not** swipeable. Rooms change only through the
+prev/next controls and the room dots — a draggable carousel competes with dragging art,
+stealing the pointer mid-placement and stranding the piece.
 
 ## Run
 

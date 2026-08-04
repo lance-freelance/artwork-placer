@@ -6,6 +6,7 @@ import { ArtObject } from './ArtObject';
 import { cn } from '@/lib/utils';
 import { assetUrl } from '../types';
 import { PlacementBand } from './PlacementBand';
+import { clampToCanvas, isValidBand } from '@/lib/placement';
 
 export function RoomCanvas({ roomId, isActive }: { roomId: string, isActive: boolean }) {
   const { 
@@ -60,14 +61,13 @@ export function RoomCanvas({ roomId, isActive }: { roomId: string, isActive: boo
         const pctCenterX = ((objectCenterX - rect.left) / rect.width) * 100;
         const pctCenterY = ((objectCenterY - rect.top) / rect.height) * 100;
         
-        const isValid = obj.type === 'wall' ? pctCenterY < room.bandSplit : pctCenterY >= room.bandSplit;
-        
-        if (isValid) {
+        if (isValidBand(obj.type, pctCenterY, room.bandSplit)) {
+          const { x, y } = clampToCanvas(pctCenterX, pctCenterY);
           placeObject({
             objectId,
             roomId,
-            x: pctCenterX,
-            y: pctCenterY,
+            x,
+            y,
             scale: obj.defaultScale,
             band: obj.type
           });

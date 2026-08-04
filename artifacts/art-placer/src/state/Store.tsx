@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { Placement } from '../types';
 
 interface DragState {
@@ -65,6 +65,21 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   const removePlacement = useCallback((objectId: string) => {
     saveHistory(placements.filter(p => p.objectId !== objectId));
   }, [placements, saveHistory]);
+
+  // Safety net: if anything steals the pointer mid-drag (the browser cancelling
+  // the gesture, the window losing focus), the piece would otherwise stay
+  // stranded in the drag layer with nothing left to release it.
+  useEffect(() => {
+    const clear = () => setDragState(null);
+    window.addEventListener('pointerup', clear);
+    window.addEventListener('pointercancel', clear);
+    window.addEventListener('blur', clear);
+    return () => {
+      window.removeEventListener('pointerup', clear);
+      window.removeEventListener('pointercancel', clear);
+      window.removeEventListener('blur', clear);
+    };
+  }, []);
 
   const undo = useCallback(() => {
     if (history.length === 0) return;

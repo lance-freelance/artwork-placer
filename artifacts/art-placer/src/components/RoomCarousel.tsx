@@ -6,7 +6,10 @@ import { useEffect, useCallback } from 'react';
 
 export function RoomCarousel() {
   const { activeRoomId, setActiveRoomId } = useStore();
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false });
+  // `watchDrag: false` is deliberate: rooms change only through the prev/next
+  // controls and the room dots. A draggable carousel competes with dragging
+  // art — Embla steals the pointer mid-placement and the piece gets stranded.
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, watchDrag: false });
 
   const activeIndex = rooms.findIndex(r => r.id === activeRoomId);
 
