@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(node -e ' *)",
-      "Bash(pnpm run *)"
+      "Bash(pnpm run *)",
+      "Bash(pnpm --filter @workspace/art-placer run build)",
+      "Bash(PORT=5000 pnpm --filter @workspace/art-placer run build)",
+      "Bash(PORT=5000 BASE_PATH=/ pnpm --filter @workspace/art-placer run build)"
     ]
   }
 }

@@ -12,7 +12,14 @@ import {
   getListMediaQueryKey,
 } from '@workspace/api-client-react';
 import { useToast } from '@/hooks/use-toast';
-import { fileStem, loadImage, readFileAsDataUrl } from './imageTools';
+import {
+  ASPECT_TOLERANCE,
+  ROOM_ASPECT,
+  cropToAspect,
+  fileStem,
+  loadImage,
+  readFileAsDataUrl,
+} from './imageTools';
 
 import {
   Form,
@@ -35,13 +42,9 @@ import {
 } from '@/components/ui/select';
 import { BandSplitPreview } from './BandSplitPreview';
 import { WallCalibrationTool } from './WallCalibrationTool';
-import { AlertTriangle, Loader2, Upload } from 'lucide-react';
+import { Crop, Loader2, Upload } from 'lucide-react';
 import { roomImageUrl } from '@/types';
 import { useEffect, useRef, useState } from 'react';
-
-/** The board canvas is 16:10; a room photo should match, within tolerance. */
-const CANVAS_ASPECT = 16 / 10;
-const ASPECT_TOLERANCE = 0.03;
 
 const roomSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -65,10 +68,11 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
   /**
-   * True when the chosen image's decoded shape is not 16:10 (within
-   * tolerance). Non-blocking — it warns, it never prevents saving.
+   * What happened to the chosen image's shape: that an upload was cropped to
+   * 16:10, or that an image picked from the folder is not 16:10 and cannot be.
+   * Informational either way — it never blocks saving.
    */
-  const [aspectWarning, setAspectWarning] = useState<string | null>(null);
+  const [aspectNotice, setAspectNotice] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadImage = useUploadRoomImage();
 
@@ -97,7 +101,7 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
     imageOpRef.current += 1;
     setIsProcessingImage(false);
     setImageError(null);
-    setAspectWarning(null);
+    setAspectNotice(null);
 
     if (room) {
       form.reset({
@@ -106,7 +110,7 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
         bandSplit: room.bandSplit,
         wallWidthFeet: room.wallWidthFeet,
       });
-      // Warn if an already-saved room's image is off-ratio too.
+      // Say so if an already-saved room's image is off-ratio too.
       void checkAspect(room.imageFilename);
     } else {
       form.reset({
@@ -159,39 +163,48 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
   }
 
   /**
-   * Decodes the chosen image and warns when its shape is not the 16:10 the
-   * board canvas expects. Runs for uploads and dropdown picks alike, because
-   * either can be off-ratio. Never blocks — it only sets a warning string.
+   * Checks the shape of an image that is already saved — a dropdown pick, or
+   * the image on a room being edited.
+   *
+   * Uploads are cropped on the way in, so nothing reaches the folder off-ratio
+   * any more; what this catches is the images that were already there before
+   * that was true. They are left alone rather than silently rewritten: the
+   * file may be shared with another room, and cropping it would move every
+   * placement in both. Re-uploading it is the fix, and the notice says so.
    */
   async function checkAspect(filename: string) {
     if (!filename) {
-      setAspectWarning(null);
+      setAspectNotice(null);
       return;
     }
     try {
       const image = await loadImage(roomImageUrl(filename));
       const ratio = image.naturalWidth / image.naturalHeight;
-      if (Math.abs(ratio - CANVAS_ASPECT) > ASPECT_TOLERANCE) {
-        setAspectWarning(
-          `This image is ${image.naturalWidth}×${image.naturalHeight} ` +
-            `(${ratio.toFixed(2)}:1), not the 16:10 the board canvas uses. ` +
-            `It is shown exactly as uploaded, so it will not fill the canvas — ` +
-            `there will be blank bands beside or above it. Crop it to 16:10 ` +
-            `(1600×1000px is ideal) to avoid this.`,
+      if (Math.abs(ratio - ROOM_ASPECT) > ASPECT_TOLERANCE) {
+        setAspectNotice(
+          `This saved image is ${image.naturalWidth}×${image.naturalHeight} ` +
+            `(${ratio.toFixed(2)}:1), not the 16:10 the board canvas uses, so ` +
+            `it will not fill the frame. Upload it again to have it cropped ` +
+            `to 16:10 automatically — 1600×1000px is ideal.`,
         );
       } else {
-        setAspectWarning(null);
+        setAspectNotice(null);
       }
     } catch {
-      // A broken/undecodable image is surfaced elsewhere; no aspect warning.
-      setAspectWarning(null);
+      // A broken/undecodable image is surfaced elsewhere; no aspect notice.
+      setAspectNotice(null);
     }
   }
 
   /**
-   * Reads one picked file, decodes it to check its shape, and sends it to the
+   * Reads one picked file, crops it to the board's 16:10, and sends it to the
    * room upload endpoint. Rooms have no thumbnail, so only { baseName, image }
    * is sent. On success the returned filename becomes the form's image.
+   *
+   * Cropping here, before the upload, means the folder only ever holds images
+   * the board can show whole: what is stored is what hangs on the wall, so a
+   * calibration measures the photograph and not a strip of blank matte beside
+   * it. An image already at 16:10 is uploaded exactly as it came off disk.
    */
   async function handleFileChosen(file: File) {
     const op = ++imageOpRef.current;
@@ -205,14 +218,13 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
       const image = await loadImage(dataUrl);
       if (!current()) return;
 
-      const ratio = image.naturalWidth / image.naturalHeight;
-      const offRatio = Math.abs(ratio - CANVAS_ASPECT) > ASPECT_TOLERANCE;
+      const cropped = cropToAspect(image, dataUrl);
 
       const typedName = form.getValues('name').trim();
       const saved = await uploadImage.mutateAsync({
         data: {
           baseName: typedName || fileStem(file.name),
-          image: dataUrl,
+          image: cropped.dataUrl,
         },
       });
       if (!current()) return;
@@ -223,16 +235,18 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
       });
       queryClient.invalidateQueries({ queryKey: getListMediaQueryKey() });
 
-      if (offRatio) {
-        setAspectWarning(
-          `This image is ${image.naturalWidth}×${image.naturalHeight} ` +
-            `(${ratio.toFixed(2)}:1), not the 16:10 the board canvas uses. ` +
-            `It is shown exactly as uploaded, so it will not fill the canvas — ` +
-            `there will be blank bands beside or above it. Crop it to 16:10 ` +
-            `(1600×1000px is ideal) to avoid this.`,
+      if (cropped.croppedFrom) {
+        const { width, height } = cropped.croppedFrom;
+        const trimmed = width > cropped.width ? 'sides' : 'top and bottom';
+        setAspectNotice(
+          `Cropped to 16:10: this image was ${width}×${height}, so the ` +
+            `${trimmed} were trimmed evenly and ${cropped.width}×${cropped.height} ` +
+            `was saved. The board shows a room photograph whole, so it has to ` +
+            `be 16:10 — upload at that ratio (1600×1000px is ideal) to choose ` +
+            `the framing yourself.`,
         );
       } else {
-        setAspectWarning(null);
+        setAspectNotice(null);
       }
 
       if (saved.renamedFrom) {
@@ -244,7 +258,9 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
             `uploaded twice, pick the existing image instead.`,
         });
       } else {
-        toast({ title: 'Image saved' });
+        toast({
+          title: cropped.croppedFrom ? 'Image cropped and saved' : 'Image saved',
+        });
       }
     } catch (err: any) {
       if (!current()) return;
@@ -306,8 +322,8 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
                 <Label>Room Image</Label>
                 <p className="text-sm text-muted-foreground mt-1">
                   Upload a 16:10 photograph of the room (1600×1000px is ideal).
-                  The photo is shown exactly as uploaded, so anything other
-                  than 16:10 leaves blank bands beside or above it.
+                  The board shows the photograph whole, so anything other than
+                  16:10 is centre-cropped to fit on the way in.
                 </p>
               </div>
               <input
@@ -356,13 +372,13 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
                 {imageError}
               </p>
             )}
-            {aspectWarning && (
+            {aspectNotice && (
               <p
-                className="text-sm text-amber-600 dark:text-amber-500 flex items-start gap-1.5"
-                data-testid="text-room-aspect-warning"
+                className="text-sm text-muted-foreground flex items-start gap-1.5"
+                data-testid="text-room-aspect-notice"
               >
-                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-                <span>{aspectWarning}</span>
+                <Crop className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>{aspectNotice}</span>
               </p>
             )}
             {form.formState.errors.imageFilename && (

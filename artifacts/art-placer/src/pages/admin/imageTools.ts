@@ -10,6 +10,86 @@
 /** Longest edge of a tray thumbnail, in pixels. */
 export const THUMBNAIL_MAX_EDGE = 360;
 
+/**
+ * The shape of the board canvas, and so the shape every room photograph is
+ * cropped to. The board shows a room exactly as it is stored, so a photo that
+ * is not this ratio would sit in the frame with blank bands beside or above
+ * it — and those bands would count as wall in the room's calibration.
+ */
+export const ROOM_ASPECT = 16 / 10;
+
+/**
+ * How far from the target ratio an image may sit before it is worth cropping.
+ * Inside this, the few pixels gained are not worth re-encoding the photograph
+ * and losing a generation of quality.
+ */
+export const ASPECT_TOLERANCE = 0.03;
+
+export interface CropResult {
+  /** The image to upload: re-encoded when cropped, the original when not. */
+  dataUrl: string;
+  width: number;
+  height: number;
+  /** The source shape, present only when a crop actually happened. */
+  croppedFrom: { width: number; height: number } | null;
+}
+
+/**
+ * Centre-crops an image to `aspect`, taking the largest rectangle of that
+ * shape that fits inside it.
+ *
+ * Centre rather than a chooser because the subject of a room photograph is the
+ * back wall, which is what a photographer centres; and the trim is small by
+ * construction, since only one axis is ever cut and only as far as the other
+ * axis allows. An image already at the ratio is returned untouched — not
+ * re-encoded — so an ideal 1600×1000 upload is stored byte-for-byte.
+ */
+export function cropToAspect(
+  image: HTMLImageElement,
+  dataUrl: string,
+  aspect = ROOM_ASPECT,
+  tolerance = ASPECT_TOLERANCE,
+): CropResult {
+  const sourceWidth = image.naturalWidth;
+  const sourceHeight = image.naturalHeight;
+  const ratio = sourceWidth / sourceHeight;
+
+  if (!Number.isFinite(ratio) || Math.abs(ratio - aspect) <= tolerance) {
+    return {
+      dataUrl,
+      width: sourceWidth,
+      height: sourceHeight,
+      croppedFrom: null,
+    };
+  }
+
+  // Too wide: keep the full height and trim the sides. Too tall: the reverse.
+  const width = ratio > aspect ? Math.round(sourceHeight * aspect) : sourceWidth;
+  const height = ratio > aspect ? sourceHeight : Math.round(sourceWidth / aspect);
+  const left = Math.round((sourceWidth - width) / 2);
+  const top = Math.round((sourceHeight - height) / 2);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('This browser could not open a drawing canvas.');
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(image, left, top, width, height, 0, 0, width, height);
+
+  return {
+    // WebP for the same reason as thumbnails: far smaller than PNG at this
+    // size, and a browser that cannot encode it returns a PNG data URL rather
+    // than failing. The server reads the type back out of the URL either way.
+    dataUrl: canvas.toDataURL('image/webp', 0.92),
+    width,
+    height,
+    croppedFrom: { width: sourceWidth, height: sourceHeight },
+  };
+}
+
 /** Reads a picked file as a `data:` URL, which is what the API accepts. */
 export function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
