@@ -35,7 +35,7 @@ export interface ArtImageUpload {
 export interface ArtImageFiles {
   fullImageFilename: string;
   thumbnailFilename: string;
-  /** Present when the requested name was already taken and the files were saved under a suffixed name instead. Holds the filename the upload would have had, so the client can point out the likely duplicate rather than letting a `-2` copy appear silently. */
+  /** Present when the requested name was already taken and the files were saved under a suffixed name instead. Holds the name of the existing file the upload collided with — which may carry a different extension, since names are compared by stem — so the client can point at the likely duplicate rather than letting a `-2` copy appear silently. */
   renamedFrom?: string;
 }
 
@@ -51,7 +51,7 @@ export interface RoomImageUpload {
 
 export interface RoomImageFile {
   imageFilename: string;
-  /** Present when the requested name was already taken and the file was saved under a suffixed name instead. */
+  /** Present when the requested name was already taken and the file was saved under a suffixed name instead. Holds the name of the existing file the upload collided with, which may carry a different extension: names are compared by stem, so a photograph re-uploaded as WebP still collides with the PNG copy of it. */
   renamedFrom?: string;
 }
 
@@ -71,6 +71,12 @@ export interface Room {
      * @exclusiveMinimum 0
      */
   wallWidthFeet: number;
+  /**
+     * Real length, in decimal feet, of whatever the reference line was laid along to produce `wallWidthFeet` — a door frame, a countertop, a headboard. Kept so the calibration tool reopens on the same reference the room was actually measured against instead of inheriting whatever the previously edited room used.
+     * Optional: rooms calibrated before this was recorded have no honest value for it, and guessing one would assert a measurement nobody made. A room absent this field is presented against the standard door frame, and gains a stored value the next time it is saved.
+     * @exclusiveMinimum 0
+     */
+  referenceLengthFeet?: number;
 }
 
 export interface RoomInput {
@@ -88,6 +94,11 @@ export interface RoomInput {
      * @exclusiveMinimum 0
      */
   wallWidthFeet: number;
+  /**
+     * Real length in decimal feet of the reference the wall width was measured against. Required here, unlike on `Room`: the admin panel always knows what it measured against, so anything it creates can record it.
+     * @exclusiveMinimum 0
+     */
+  referenceLengthFeet: number;
 }
 
 export interface RoomUpdate {
@@ -102,6 +113,8 @@ export interface RoomUpdate {
   bandSplit?: number;
   /** @exclusiveMinimum 0 */
   wallWidthFeet?: number;
+  /** @exclusiveMinimum 0 */
+  referenceLengthFeet?: number;
 }
 
 export type ObjectType = typeof ObjectType[keyof typeof ObjectType];

@@ -43,7 +43,7 @@ export const UploadArtImageBody = zod.object({
 export const UploadArtImageResponse = zod.object({
   "fullImageFilename": zod.string(),
   "thumbnailFilename": zod.string(),
-  "renamedFrom": zod.string().optional().describe('Present when the requested name was already taken and the files were saved under a suffixed name instead. Holds the filename the upload would have had, so the client can point out the likely duplicate rather than letting a `-2` copy appear silently.\n')
+  "renamedFrom": zod.string().optional().describe('Present when the requested name was already taken and the files were saved under a suffixed name instead. Holds the name of the existing file the upload collided with — which may carry a different extension, since names are compared by stem — so the client can point at the likely duplicate rather than letting a `-2` copy appear silently.\n')
 })
 
 
@@ -72,7 +72,7 @@ export const UploadRoomImageBody = zod.object({
 
 export const UploadRoomImageResponse = zod.object({
   "imageFilename": zod.string(),
-  "renamedFrom": zod.string().optional().describe('Present when the requested name was already taken and the file was saved under a suffixed name instead.\n')
+  "renamedFrom": zod.string().optional().describe('Present when the requested name was already taken and the file was saved under a suffixed name instead. Holds the name of the existing file the upload collided with, which may carry a different extension: names are compared by stem, so a photograph re-uploaded as WebP still collides with the PNG copy of it.\n')
 })
 
 
@@ -94,6 +94,8 @@ export const listRoomsResponseBandSplitMax = 99;
 
 export const listRoomsResponseWallWidthFeetExclusiveMin = 0;
 
+export const listRoomsResponseReferenceLengthFeetExclusiveMin = 0;
+
 
 
 export const ListRoomsResponseItem = zod.object({
@@ -101,7 +103,8 @@ export const ListRoomsResponseItem = zod.object({
   "name": zod.string(),
   "imageFilename": zod.string().describe('A file in the public rooms directory. 1600x1000px, 16:10.'),
   "bandSplit": zod.number().min(1).max(listRoomsResponseBandSplitMax).describe('Percentage of canvas height. Wall art may only be placed above it, sculptures only below it.\n'),
-  "wallWidthFeet": zod.number().gt(listRoomsResponseWallWidthFeetExclusiveMin).describe('Real-world width, in decimal feet, of the BACK WALL spanned by the full canvas width — measured corner to corner exactly where that wall fills the frame. Deliberately not the room\'s footprint, its depth, or anything visible through an archway. Every placed piece is scaled against this number, so it is what lets one 48\" canvas read at the correct size in rooms photographed at different fields of view. Set by the calibration tool in the admin panel.\n')
+  "wallWidthFeet": zod.number().gt(listRoomsResponseWallWidthFeetExclusiveMin).describe('Real-world width, in decimal feet, of the BACK WALL spanned by the full canvas width — measured corner to corner exactly where that wall fills the frame. Deliberately not the room\'s footprint, its depth, or anything visible through an archway. Every placed piece is scaled against this number, so it is what lets one 48\" canvas read at the correct size in rooms photographed at different fields of view. Set by the calibration tool in the admin panel.\n'),
+  "referenceLengthFeet": zod.number().gt(listRoomsResponseReferenceLengthFeetExclusiveMin).optional().describe('Real length, in decimal feet, of whatever the reference line was laid along to produce `wallWidthFeet` — a door frame, a countertop, a headboard. Kept so the calibration tool reopens on the same reference the room was actually measured against instead of inheriting whatever the previously edited room used.\nOptional: rooms calibrated before this was recorded have no honest value for it, and guessing one would assert a measurement nobody made. A room absent this field is presented against the standard door frame, and gains a stored value the next time it is saved.\n')
 })
 export const ListRoomsResponse = zod.array(ListRoomsResponseItem)
 
@@ -115,18 +118,23 @@ export const createRoomBodyBandSplitMax = 99;
 
 export const createRoomBodyWallWidthFeetExclusiveMin = 0;
 
+export const createRoomBodyReferenceLengthFeetExclusiveMin = 0;
+
 
 
 export const CreateRoomBody = zod.object({
   "name": zod.string().min(1),
   "imageFilename": zod.string().min(1),
   "bandSplit": zod.number().min(1).max(createRoomBodyBandSplitMax),
-  "wallWidthFeet": zod.number().gt(createRoomBodyWallWidthFeetExclusiveMin).describe('Real-world back-wall width in decimal feet.')
+  "wallWidthFeet": zod.number().gt(createRoomBodyWallWidthFeetExclusiveMin).describe('Real-world back-wall width in decimal feet.'),
+  "referenceLengthFeet": zod.number().gt(createRoomBodyReferenceLengthFeetExclusiveMin).describe('Real length in decimal feet of the reference the wall width was measured against. Required here, unlike on `Room`: the admin panel always knows what it measured against, so anything it creates can record it.\n')
 })
 
 export const createRoomResponseBandSplitMax = 99;
 
 export const createRoomResponseWallWidthFeetExclusiveMin = 0;
+
+export const createRoomResponseReferenceLengthFeetExclusiveMin = 0;
 
 
 
@@ -135,7 +143,8 @@ export const CreateRoomResponse = zod.object({
   "name": zod.string(),
   "imageFilename": zod.string().describe('A file in the public rooms directory. 1600x1000px, 16:10.'),
   "bandSplit": zod.number().min(1).max(createRoomResponseBandSplitMax).describe('Percentage of canvas height. Wall art may only be placed above it, sculptures only below it.\n'),
-  "wallWidthFeet": zod.number().gt(createRoomResponseWallWidthFeetExclusiveMin).describe('Real-world width, in decimal feet, of the BACK WALL spanned by the full canvas width — measured corner to corner exactly where that wall fills the frame. Deliberately not the room\'s footprint, its depth, or anything visible through an archway. Every placed piece is scaled against this number, so it is what lets one 48\" canvas read at the correct size in rooms photographed at different fields of view. Set by the calibration tool in the admin panel.\n')
+  "wallWidthFeet": zod.number().gt(createRoomResponseWallWidthFeetExclusiveMin).describe('Real-world width, in decimal feet, of the BACK WALL spanned by the full canvas width — measured corner to corner exactly where that wall fills the frame. Deliberately not the room\'s footprint, its depth, or anything visible through an archway. Every placed piece is scaled against this number, so it is what lets one 48\" canvas read at the correct size in rooms photographed at different fields of view. Set by the calibration tool in the admin panel.\n'),
+  "referenceLengthFeet": zod.number().gt(createRoomResponseReferenceLengthFeetExclusiveMin).optional().describe('Real length, in decimal feet, of whatever the reference line was laid along to produce `wallWidthFeet` — a door frame, a countertop, a headboard. Kept so the calibration tool reopens on the same reference the room was actually measured against instead of inheriting whatever the previously edited room used.\nOptional: rooms calibrated before this was recorded have no honest value for it, and guessing one would assert a measurement nobody made. A room absent this field is presented against the standard door frame, and gains a stored value the next time it is saved.\n')
 })
 
 
@@ -152,18 +161,23 @@ export const updateRoomBodyBandSplitMax = 99;
 
 export const updateRoomBodyWallWidthFeetExclusiveMin = 0;
 
+export const updateRoomBodyReferenceLengthFeetExclusiveMin = 0;
+
 
 
 export const UpdateRoomBody = zod.object({
   "name": zod.string().min(1).optional(),
   "imageFilename": zod.string().min(1).optional(),
   "bandSplit": zod.number().min(1).max(updateRoomBodyBandSplitMax).optional(),
-  "wallWidthFeet": zod.number().gt(updateRoomBodyWallWidthFeetExclusiveMin).optional()
+  "wallWidthFeet": zod.number().gt(updateRoomBodyWallWidthFeetExclusiveMin).optional(),
+  "referenceLengthFeet": zod.number().gt(updateRoomBodyReferenceLengthFeetExclusiveMin).optional()
 })
 
 export const updateRoomResponseBandSplitMax = 99;
 
 export const updateRoomResponseWallWidthFeetExclusiveMin = 0;
+
+export const updateRoomResponseReferenceLengthFeetExclusiveMin = 0;
 
 
 
@@ -172,7 +186,8 @@ export const UpdateRoomResponse = zod.object({
   "name": zod.string(),
   "imageFilename": zod.string().describe('A file in the public rooms directory. 1600x1000px, 16:10.'),
   "bandSplit": zod.number().min(1).max(updateRoomResponseBandSplitMax).describe('Percentage of canvas height. Wall art may only be placed above it, sculptures only below it.\n'),
-  "wallWidthFeet": zod.number().gt(updateRoomResponseWallWidthFeetExclusiveMin).describe('Real-world width, in decimal feet, of the BACK WALL spanned by the full canvas width — measured corner to corner exactly where that wall fills the frame. Deliberately not the room\'s footprint, its depth, or anything visible through an archway. Every placed piece is scaled against this number, so it is what lets one 48\" canvas read at the correct size in rooms photographed at different fields of view. Set by the calibration tool in the admin panel.\n')
+  "wallWidthFeet": zod.number().gt(updateRoomResponseWallWidthFeetExclusiveMin).describe('Real-world width, in decimal feet, of the BACK WALL spanned by the full canvas width — measured corner to corner exactly where that wall fills the frame. Deliberately not the room\'s footprint, its depth, or anything visible through an archway. Every placed piece is scaled against this number, so it is what lets one 48\" canvas read at the correct size in rooms photographed at different fields of view. Set by the calibration tool in the admin panel.\n'),
+  "referenceLengthFeet": zod.number().gt(updateRoomResponseReferenceLengthFeetExclusiveMin).optional().describe('Real length, in decimal feet, of whatever the reference line was laid along to produce `wallWidthFeet` — a door frame, a countertop, a headboard. Kept so the calibration tool reopens on the same reference the room was actually measured against instead of inheriting whatever the previously edited room used.\nOptional: rooms calibrated before this was recorded have no honest value for it, and guessing one would assert a measurement nobody made. A room absent this field is presented against the standard door frame, and gains a stored value the next time it is saved.\n')
 })
 
 

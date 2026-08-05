@@ -25,6 +25,12 @@ const PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
 const DATA_URL = `data:image/png;base64,${PNG_BASE64}`;
 
+// The same, as a real 1x1 WebP. The admin panel re-encodes to WebP whenever it
+// has to touch an image — cropping a room photo to 16:10 — so the same picture
+// can arrive a second time under a different extension.
+const WEBP_BASE64 = "UklGRhoAAABXRUJQVlA4TA0AAAAvAAAAEAcQERGIiP4HAA==";
+const WEBP_DATA_URL = `data:image/webp;base64,${WEBP_BASE64}`;
+
 let server;
 const written = [];
 
@@ -84,14 +90,14 @@ after(async () => {
   }
 });
 
-async function upload() {
+async function upload(dataUrl = DATA_URL) {
   const res = await fetch(`${BASE}/api/media/art`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       baseName: STEM,
-      fullImage: DATA_URL,
-      thumbnail: DATA_URL,
+      fullImage: dataUrl,
+      thumbnail: dataUrl,
     }),
   });
   const body = await res.json();
@@ -133,4 +139,14 @@ test("a duplicate upload is renamed and says so", async () => {
   assert.equal(status, 201);
   assert.equal(body.renamedFrom, `${STEM}.png`);
   assert.equal(body.fullImageFilename, `${STEM}-2.png`);
+});
+
+test("a duplicate in another format still collides, and names the file it hit", async () => {
+  const { status, body } = await upload(WEBP_DATA_URL);
+  assert.equal(status, 201);
+  // Names are compared by stem: were they compared whole, this would have
+  // been saved as a second `${STEM}` — one name, two files, no warning.
+  assert.equal(body.fullImageFilename, `${STEM}-3.webp`);
+  // The PNG already on disk, not the `.webp` name this upload asked for.
+  assert.equal(body.renamedFrom, `${STEM}.png`);
 });

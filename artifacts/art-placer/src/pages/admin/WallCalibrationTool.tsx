@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   toDecimalFeet,
+  toFeetInches,
   wallWidthFromReference,
   formatFeetInches,
 } from '@/lib/sizing';
@@ -18,7 +19,14 @@ interface WallCalibrationToolProps {
   imageFilename: string | undefined;
   /** The room's current calibrated wall width. */
   wallWidthFeet: number;
-  onChange: (wallWidthFeet: number) => void;
+  /**
+   * The real length of whatever this room was measured against. Owned by the
+   * form so it is saved with the room: held here instead, it would survive a
+   * change of room and quietly describe the previous one's door frame.
+   */
+  referenceLengthFeet: number;
+  onWallWidthChange: (wallWidthFeet: number) => void;
+  onReferenceLengthChange: (referenceLengthFeet: number) => void;
 }
 
 /** A reference endpoint as a fraction (0–1) of the rendered image box. */
@@ -29,10 +37,6 @@ interface Point {
 
 /** Which endpoint a live pointer gesture is dragging. */
 type DragTarget = 'a' | 'b';
-
-/** A standard door frame — the reference most photos have to hand. */
-const DEFAULT_REFERENCE_FEET = 6;
-const DEFAULT_REFERENCE_INCHES = 8;
 
 /** Keeps the opening endpoints clear of the very edges of the frame. */
 const MAX_INITIAL_SPAN = 0.94;
@@ -86,7 +90,9 @@ export function WallCalibrationTool({
   roomKey,
   imageFilename,
   wallWidthFeet,
-  onChange,
+  referenceLengthFeet,
+  onWallWidthChange,
+  onReferenceLengthChange,
 }: WallCalibrationToolProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -103,8 +109,23 @@ export function WallCalibrationTool({
 
   const [box, setBox] = useState<{ width: number; height: number } | null>(null);
   const [points, setPoints] = useState<{ a: Point; b: Point } | null>(null);
-  const [feet, setFeet] = useState(DEFAULT_REFERENCE_FEET);
-  const [inches, setInches] = useState(DEFAULT_REFERENCE_INCHES);
+
+  /**
+   * The reference as its two fields hold it, seeded from the room's saved
+   * length and owned here from then on. Editing needs whole feet and whole
+   * inches separately, and rebuilding them from the decimal on every keystroke
+   * would rewrite what was being typed — `0` in the inches box would reappear
+   * as the inches the feet box implies.
+   *
+   * Correct only because this component is mounted per room (`RoomsManager`
+   * keys the form on the selected room), so the seed above is always that
+   * room's own value. Re-seeding in an effect instead cannot work: the parent
+   * resets the form in its own effect, which React runs *after* this child's,
+   * so the sync would read the previously selected room's length. That is the
+   * bug this whole arrangement exists to avoid — do not "improve" it into one.
+   */
+  const [reference, setReference] = useState(() => toFeetInches(referenceLengthFeet));
+  const { feet, inches } = reference;
 
   const referenceFeet = toDecimalFeet(feet, inches);
 
@@ -193,7 +214,7 @@ export function WallCalibrationTool({
     setPoints(next);
 
     const width = measure(next);
-    if (width !== null) onChange(width);
+    if (width !== null) onWallWidthChange(width);
   };
 
   /**
@@ -211,17 +232,28 @@ export function WallCalibrationTool({
     dragRef.current = null;
   };
 
-  /** Reference edits re-measure the existing line straight away. */
+  /**
+   * Hands a reference edit to the form and re-measures the existing line
+   * against the new length.
+   *
+   * The reference is reported even when nothing can be measured — no image
+   * picked yet, or a line too short to trust. It is the room's own record of
+   * what it was measured against, so discarding it just because a width cannot
+   * be derived right now would throw away what was typed.
+   */
   const commitReference = (nextFeet: number, nextInches: number) => {
+    const nextReference = toDecimalFeet(nextFeet, nextInches);
+    onReferenceLengthChange(nextReference);
+
     if (!points || !box || box.width <= 0) return;
     const dx = (points.a.x - points.b.x) * box.width;
     const dy = (points.a.y - points.b.y) * box.height;
     const width = wallWidthFromReference({
       lineLengthPx: Math.hypot(dx, dy),
       canvasWidthPx: box.width,
-      referenceFeet: toDecimalFeet(nextFeet, nextInches),
+      referenceFeet: nextReference,
     });
-    if (width !== null) onChange(width);
+    if (width !== null) onWallWidthChange(width);
   };
 
   const parseField = (value: string) => {
@@ -231,13 +263,13 @@ export function WallCalibrationTool({
 
   const handleFeetChange = (value: string) => {
     const next = parseField(value);
-    setFeet(next);
+    setReference({ feet: next, inches });
     commitReference(next, inches);
   };
 
   const handleInchesChange = (value: string) => {
     const next = parseField(value);
-    setInches(next);
+    setReference({ feet, inches: next });
     commitReference(feet, next);
   };
 
@@ -276,15 +308,24 @@ export function WallCalibrationTool({
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            Defaults to a standard door frame (6 ft 8 in). Change it to match
-            whatever you laid the line along — a countertop, a window, a door.
+            Change it to match whatever you laid the line along — a countertop,
+            a window, a door. Saved with the room, so it comes back as you left
+            it. A room never calibrated against anything else starts on a
+            standard door frame (6 ft 8 in).
           </p>
         </div>
 
         <div className="space-y-1.5">
           <Label>Measured wall width</Label>
           <div className="bg-muted/50 rounded-md border border-border/50 px-3 py-2">
-            {measured === null && points !== null ? (
+            {referenceFeet <= 0 ? (
+              /* Distinguished from a short line: both leave the width
+                 underivable, but only one of them is fixed by dragging. */
+              <p className="text-sm text-muted-foreground" data-testid="text-calibration-guidance">
+                Set a reference length above — the wall cannot be measured
+                against something of no stated size.
+              </p>
+            ) : measured === null && points !== null ? (
               <p className="text-sm text-muted-foreground" data-testid="text-calibration-guidance">
                 Draw the line a little longer along your reference — it is too
                 short to measure reliably yet.

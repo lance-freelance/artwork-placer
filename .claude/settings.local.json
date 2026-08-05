@@ -5,7 +5,15 @@
       "Bash(pnpm run *)",
       "Bash(pnpm --filter @workspace/art-placer run build)",
       "Bash(PORT=5000 pnpm --filter @workspace/art-placer run build)",
-      "Bash(PORT=5000 BASE_PATH=/ pnpm --filter @workspace/art-placer run build)"
+      "Bash(PORT=5000 BASE_PATH=/ pnpm --filter @workspace/art-placer run build)",
+      "Bash(pnpm --filter @workspace/api-spec run codegen)",
+      "Bash(cat)",
+      "Bash(node /tmp/check-sizing.mjs)",
+      "Bash(pnpm --filter @workspace/api-server run test)",
+      "Bash(timeout 300 pnpm test)",
+      "Bash(curl -s --max-time 10 http://localhost:3737/api/rooms)",
+      "Bash(git checkout *)",
+      "Bash(git add *)"
     ]
   }
 }

@@ -9,6 +9,6 @@
 export interface ArtImageFiles {
   fullImageFilename: string;
   thumbnailFilename: string;
-  /** Present when the requested name was already taken and the files were saved under a suffixed name instead. Holds the filename the upload would have had, so the client can point out the likely duplicate rather than letting a `-2` copy appear silently. */
+  /** Present when the requested name was already taken and the files were saved under a suffixed name instead. Holds the name of the existing file the upload collided with — which may carry a different extension, since names are compared by stem — so the client can point at the likely duplicate rather than letting a `-2` copy appear silently. */
   renamedFrom?: string;
 }

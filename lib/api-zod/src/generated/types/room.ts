@@ -22,4 +22,10 @@ export interface Room {
      * @exclusiveMinimum 0
      */
   wallWidthFeet: number;
+  /**
+     * Real length, in decimal feet, of whatever the reference line was laid along to produce `wallWidthFeet` — a door frame, a countertop, a headboard. Kept so the calibration tool reopens on the same reference the room was actually measured against instead of inheriting whatever the previously edited room used.
+     * Optional: rooms calibrated before this was recorded have no honest value for it, and guessing one would assert a measurement nobody made. A room absent this field is presented against the standard door frame, and gains a stored value the next time it is saved.
+     * @exclusiveMinimum 0
+     */
+  referenceLengthFeet?: number;
 }

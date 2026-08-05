@@ -122,8 +122,23 @@ export function RoomsManager() {
       {/* Main Content Area */}
       <div className="flex-1 p-6 lg:p-10 overflow-hidden bg-background">
         {showForm ? (
-          <RoomForm 
-            room={selectedRoom} 
+          <RoomForm
+            /*
+              Mounted fresh per room. The form resets itself when `room`
+              changes, but that reset runs in a parent effect — React runs it
+              *after* the effects of the controls inside, so anything that
+              seeds itself from the form on a room change reads the previously
+              selected room's values and keeps them. That is how the
+              calibration tool came to show the last room's reference length.
+              Remounting sidesteps the ordering entirely: every control starts
+              from the right room on its first render.
+
+              The key is the room, not the query result, so a refetch after
+              saving still updates the mounted form in place rather than
+              throwing away whatever is being edited.
+            */
+            key={selectedRoomId ?? 'new-room'}
+            room={selectedRoom}
             onSuccess={() => {
               setIsCreating(false);
               // keep selection if editing, or clear if creating

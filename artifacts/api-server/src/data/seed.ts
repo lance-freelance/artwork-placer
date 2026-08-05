@@ -15,15 +15,22 @@ import type { ArtObject, Room } from "@workspace/api-zod";
  * against the real rooms.
  */
 
+/*
+ * `referenceLengthFeet` is the furniture each width above was read off, so the
+ * calibration tool opens on the object the estimate actually came from rather
+ * than a door frame nobody measured. It is the reference, not the width: the
+ * two agree by construction, since the width is the reference divided by the
+ * fraction of the frame it spans.
+ */
 export const seedRooms: Room[] = [
   // Curved bouclé sofa (~8'4") spans a little over half the frame.
-  { id: "living-room", name: "Living Room", imageFilename: "living-room.jpg", bandSplit: 58, wallWidthFeet: 15 },
-  // Widest of the four: a long console reads as only a quarter of the frame.
-  { id: "loft", name: "Loft", imageFilename: "loft.jpg", bandSplit: 62, wallWidthFeet: 18 },
+  { id: "living-room", name: "Living Room", imageFilename: "living-room.jpg", bandSplit: 58, wallWidthFeet: 15, referenceLengthFeet: 8.3333 },
+  // Widest of the four: a 4'6" console reads as only a quarter of the frame.
+  { id: "loft", name: "Loft", imageFilename: "loft.jpg", bandSplit: 62, wallWidthFeet: 18, referenceLengthFeet: 4.5 },
   // Tightest: the executive desk (~7') fills more than half the width.
-  { id: "office", name: "Office", imageFilename: "office.jpg", bandSplit: 55, wallWidthFeet: 13.5 },
+  { id: "office", name: "Office", imageFilename: "office.jpg", bandSplit: 55, wallWidthFeet: 13.5, referenceLengthFeet: 7 },
   // King headboard (~6'8") sits in the wall plane at ~42% of the frame.
-  { id: "primary-suite", name: "Primary Suite", imageFilename: "primary-suite.jpg", bandSplit: 60, wallWidthFeet: 15.5 },
+  { id: "primary-suite", name: "Primary Suite", imageFilename: "primary-suite.jpg", bandSplit: 60, wallWidthFeet: 15.5, referenceLengthFeet: 6.6667 },
 ];
 
 /**

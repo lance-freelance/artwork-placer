@@ -21,4 +21,9 @@ export interface RoomInput {
      * @exclusiveMinimum 0
      */
   wallWidthFeet: number;
+  /**
+     * Real length in decimal feet of the reference the wall width was measured against. Required here, unlike on `Room`: the admin panel always knows what it measured against, so anything it creates can record it.
+     * @exclusiveMinimum 0
+     */
+  referenceLengthFeet: number;
 }

@@ -473,9 +473,11 @@ components:
         renamedFrom:
           description: >
             Present when the requested name was already taken and the files
-            were saved under a suffixed name instead. Holds the filename the
-            upload would have had, so the client can point out the likely
-            duplicate rather than letting a `-2` copy appear silently.
+            were saved under a suffixed name instead. Holds the name of the
+            existing file the upload collided with — which may carry a
+            different extension, since names are compared by stem — so the
+            client can point at the likely duplicate rather than letting a
+            `-2` copy appear silently.
           type: string
       required:
         - fullImageFilename
@@ -507,7 +509,10 @@ components:
         renamedFrom:
           description: >
             Present when the requested name was already taken and the file was
-            saved under a suffixed name instead.
+            saved under a suffixed name instead. Holds the name of the existing
+            file the upload collided with, which may carry a different
+            extension: names are compared by stem, so a photograph re-uploaded
+            as WebP still collides with the PNG copy of it.
           type: string
       required:
         - imageFilename
@@ -540,6 +545,20 @@ components:
             of view. Set by the calibration tool in the admin panel.
           type: number
           exclusiveMinimum: 0
+        referenceLengthFeet:
+          description: >
+            Real length, in decimal feet, of whatever the reference line was
+            laid along to produce `wallWidthFeet` — a door frame, a countertop,
+            a headboard. Kept so the calibration tool reopens on the same
+            reference the room was actually measured against instead of
+            inheriting whatever the previously edited room used.
+
+            Optional: rooms calibrated before this was recorded have no honest
+            value for it, and guessing one would assert a measurement nobody
+            made. A room absent this field is presented against the standard
+            door frame, and gains a stored value the next time it is saved.
+          type: number
+          exclusiveMinimum: 0
       required:
         - id
         - name
@@ -564,11 +583,20 @@ components:
           description: Real-world back-wall width in decimal feet.
           type: number
           exclusiveMinimum: 0
+        referenceLengthFeet:
+          description: >
+            Real length in decimal feet of the reference the wall width was
+            measured against. Required here, unlike on `Room`: the admin panel
+            always knows what it measured against, so anything it creates can
+            record it.
+          type: number
+          exclusiveMinimum: 0
       required:
         - name
         - imageFilename
         - bandSplit
         - wallWidthFeet
+        - referenceLengthFeet
 
     RoomUpdate:
       type: object
@@ -584,6 +612,9 @@ components:
           minimum: 1
           maximum: 99
         wallWidthFeet:
+          type: number
+          exclusiveMinimum: 0
+        referenceLengthFeet:
           type: number
           exclusiveMinimum: 0
 

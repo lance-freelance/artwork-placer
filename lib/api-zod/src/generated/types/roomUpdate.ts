@@ -18,4 +18,6 @@ export interface RoomUpdate {
   bandSplit?: number;
   /** @exclusiveMinimum 0 */
   wallWidthFeet?: number;
+  /** @exclusiveMinimum 0 */
+  referenceLengthFeet?: number;
 }

@@ -8,6 +8,6 @@
 
 export interface RoomImageFile {
   imageFilename: string;
-  /** Present when the requested name was already taken and the file was saved under a suffixed name instead. */
+  /** Present when the requested name was already taken and the file was saved under a suffixed name instead. Holds the name of the existing file the upload collided with, which may carry a different extension: names are compared by stem, so a photograph re-uploaded as WebP still collides with the PNG copy of it. */
   renamedFrom?: string;
 }

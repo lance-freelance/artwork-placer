@@ -48,28 +48,50 @@ export function aspectRatioOf(
 }
 
 /**
- * Renders decimal feet the way someone would say it out loud: `13.5` becomes
- * `13 ft 6 in`. Rounds to the nearest inch, and carries 12" up into the next
- * foot so nothing ever reads as `13 ft 12 in`.
+ * Decimal feet split into whole feet and inches, as the calibration tool's
+ * pair of number fields holds it. Rounds to the nearest inch and carries 12"
+ * up into the next foot, so nothing ever reads as `13 ft 12 in`.
  */
-export function formatFeetInches(feet: number): string {
-  if (!Number.isFinite(feet) || feet <= 0) return '—';
+export function toFeetInches(value: number): { feet: number; inches: number } {
+  if (!Number.isFinite(value) || value <= 0) return { feet: 0, inches: 0 };
 
-  let wholeFeet = Math.floor(feet);
-  let inches = Math.round((feet - wholeFeet) * INCHES_PER_FOOT);
+  let feet = Math.floor(value);
+  let inches = Math.round((value - feet) * INCHES_PER_FOOT);
 
   if (inches === INCHES_PER_FOOT) {
-    wholeFeet += 1;
+    feet += 1;
     inches = 0;
   }
 
-  return inches === 0 ? `${wholeFeet} ft` : `${wholeFeet} ft ${inches} in`;
+  return { feet, inches };
+}
+
+/**
+ * Renders decimal feet the way someone would say it out loud: `13.5` becomes
+ * `13 ft 6 in`.
+ */
+export function formatFeetInches(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) return '—';
+
+  const { feet, inches } = toFeetInches(value);
+  return inches === 0 ? `${feet} ft` : `${feet} ft ${inches} in`;
 }
 
 /** Feet and inches as a single decimal-feet value. */
 export function toDecimalFeet(feet: number, inches: number): number {
   return feet + inches / INCHES_PER_FOOT;
 }
+
+/**
+ * A standard door frame: the reference most room photographs have to hand, and
+ * what the calibration tool opens on for a room with nothing else recorded.
+ *
+ * Shared rather than re-declared beside each use. The admin form needs it to
+ * fill in a room that predates `referenceLengthFeet`, and the tool needs it as
+ * the value those fields start on — two copies would drift, and the drift
+ * would show up as a room's measured width shifting the moment it was opened.
+ */
+export const DEFAULT_REFERENCE_LENGTH_FEET = toDecimalFeet(6, 8);
 
 /**
  * Derives a room's back-wall width from a drawn reference line.

@@ -304,28 +304,44 @@ function safeStem(baseName: string): string {
 }
 
 /**
- * Every filename already taken for one kind, across both locations, so the
+ * Every name already taken for one kind, across both locations, so the
  * collision check covers seeded originals and previous uploads alike.
+ *
+ * Keyed by stem rather than by whole filename, because the extension is chosen
+ * by the encoder and not by whoever uploads: a room photograph cropped to
+ * 16:10 in the browser arrives as WebP even when the first copy of it was a
+ * PNG. Comparing whole filenames would call those two unrelated and quietly
+ * keep both, leaving one stem sitting in the picker twice with no hint that
+ * either is a duplicate.
+ *
+ * Maps to the filename holding each stem, so a rename can name the file it
+ * actually collided with rather than a name no file has.
  */
-async function takenNames(kind: MediaKind): Promise<Set<string>> {
-  const names = new Set<string>();
+async function takenStems(kind: MediaKind): Promise<Map<string, string>> {
+  const byStem = new Map<string, string>();
+  const add = (filename: string) => {
+    const stem = filename.replace(/\.[^.]+$/, "");
+    // First writer wins: the local mirror and the bucket hold the same file,
+    // and either name is equally true to report.
+    if (!byStem.has(stem)) byStem.set(stem, filename);
+  };
 
   for (const base of publicDirCandidates()) {
     const dir = path.join(base, MEDIA_KINDS[kind].dir);
     const entries = await readdir(dir).catch(() => []);
-    for (const n of entries) names.add(n);
+    for (const n of entries) add(n);
     if (entries.length > 0) break;
   }
 
   try {
     const bucket = getBucket();
     const [files] = await bucket.getFiles({ prefix: MEDIA_KINDS[kind].prefix });
-    for (const f of files) names.add(path.basename(f.name));
+    for (const f of files) add(path.basename(f.name));
   } catch {
     // If object storage is unavailable the check only covers the filesystem.
   }
 
-  return names;
+  return byStem;
 }
 
 /**
@@ -374,15 +390,17 @@ export async function saveArtImages(input: {
   const full = decodeDataUrl(input.fullImage, "The image");
   const thumb = decodeDataUrl(input.thumbnail, "The thumbnail");
 
-  const existingNames = await takenNames("art");
+  const taken = await takenStems("art");
 
   const wanted = safeStem(input.baseName);
   let stem = wanted;
   let suffix = 2;
-  while (
-    existingNames.has(`${stem}.${full.extension}`) ||
-    existingNames.has(`${stem}-thumb.${thumb.extension}`)
-  ) {
+  // The name of the file that pushed this upload onto a suffix, kept from the
+  // first clash: later rounds collide with `-2`, `-3` and so on, which say
+  // nothing useful about the piece already there.
+  let clashedWith: string | undefined;
+  while (taken.has(stem) || taken.has(`${stem}-thumb`)) {
+    clashedWith ??= taken.get(stem) ?? taken.get(`${stem}-thumb`);
     stem = `${wanted}-${suffix}`;
     suffix += 1;
   }
@@ -396,14 +414,12 @@ export async function saveArtImages(input: {
   ]);
 
   // A suffixed stem almost always means the same piece was uploaded twice.
-  // The rename is reported so the client can say so, instead of a `-2` copy
-  // appearing with no explanation.
+  // The file it clashed with is reported so the client can say which one,
+  // instead of a `-2` copy appearing with no explanation.
   return {
     fullImageFilename,
     thumbnailFilename,
-    ...(stem !== wanted
-      ? { renamedFrom: `${wanted}.${full.extension}` }
-      : {}),
+    ...(clashedWith ? { renamedFrom: clashedWith } : {}),
   };
 }
 
@@ -419,12 +435,14 @@ export async function saveRoomImage(input: {
 }): Promise<{ imageFilename: string; renamedFrom?: string }> {
   const image = decodeDataUrl(input.image, "The image");
 
-  const existingNames = await takenNames("rooms");
+  const taken = await takenStems("rooms");
 
   const wanted = safeStem(input.baseName);
   let stem = wanted;
   let suffix = 2;
-  while (existingNames.has(`${stem}.${image.extension}`)) {
+  let clashedWith: string | undefined;
+  while (taken.has(stem)) {
+    clashedWith ??= taken.get(stem);
     stem = `${wanted}-${suffix}`;
     suffix += 1;
   }
@@ -434,8 +452,6 @@ export async function saveRoomImage(input: {
 
   return {
     imageFilename,
-    ...(stem !== wanted
-      ? { renamedFrom: `${wanted}.${image.extension}` }
-      : {}),
+    ...(clashedWith ? { renamedFrom: clashedWith } : {}),
   };
 }

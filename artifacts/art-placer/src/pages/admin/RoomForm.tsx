@@ -44,6 +44,7 @@ import { BandSplitPreview } from './BandSplitPreview';
 import { WallCalibrationTool } from './WallCalibrationTool';
 import { Crop, Loader2, Upload } from 'lucide-react';
 import { roomImageUrl } from '@/types';
+import { DEFAULT_REFERENCE_LENGTH_FEET } from '@/lib/sizing';
 import { useEffect, useRef, useState } from 'react';
 
 const roomSchema = z.object({
@@ -51,6 +52,9 @@ const roomSchema = z.object({
   imageFilename: z.string().min(1, "Image is required"),
   bandSplit: z.number().min(1, "Must be > 0").max(99, "Must be < 100"),
   wallWidthFeet: z.coerce.number().positive("Must be > 0"),
+  referenceLengthFeet: z.coerce
+    .number()
+    .positive("Set a reference length for the calibration line"),
 });
 
 type RoomFormValues = z.infer<typeof roomSchema>;
@@ -91,6 +95,11 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
       imageFilename: room?.imageFilename ?? '',
       bandSplit: room?.bandSplit ?? 50,
       wallWidthFeet: room?.wallWidthFeet ?? 13.5,
+      // Rooms calibrated before the reference was recorded have none stored.
+      // The door frame is what the tool used to assume for every room, so it
+      // is the reading of their saved width that is already true.
+      referenceLengthFeet:
+        room?.referenceLengthFeet ?? DEFAULT_REFERENCE_LENGTH_FEET,
     },
   });
 
@@ -109,6 +118,8 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
         imageFilename: room.imageFilename,
         bandSplit: room.bandSplit,
         wallWidthFeet: room.wallWidthFeet,
+        referenceLengthFeet:
+          room.referenceLengthFeet ?? DEFAULT_REFERENCE_LENGTH_FEET,
       });
       // Say so if an already-saved room's image is off-ratio too.
       void checkAspect(room.imageFilename);
@@ -118,6 +129,7 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
         imageFilename: '',
         bandSplit: 50,
         wallWidthFeet: 13.5,
+        referenceLengthFeet: DEFAULT_REFERENCE_LENGTH_FEET,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -282,6 +294,7 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
 
   const roomImages = media?.rooms ?? [];
   const imageFilename = form.watch('imageFilename');
+  const referenceLengthFeet = form.watch('referenceLengthFeet');
 
   return (
     <Form {...form}>
@@ -449,10 +462,28 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
                     roomKey={room?.id ?? 'new-room'}
                     imageFilename={imageFilename}
                     wallWidthFeet={field.value}
-                    onChange={field.onChange}
+                    referenceLengthFeet={referenceLengthFeet}
+                    onWallWidthChange={field.onChange}
+                    onReferenceLengthChange={(next) =>
+                      form.setValue('referenceLengthFeet', next, {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      })
+                    }
                   />
                 </FormControl>
                 <FormMessage />
+                {/* The reference has no FormField of its own — the tool owns
+                    both halves of the calibration — so its error is surfaced
+                    here rather than silently blocking the submit. */}
+                {form.formState.errors.referenceLengthFeet && (
+                  <p
+                    className="text-sm text-destructive"
+                    data-testid="text-reference-length-error"
+                  >
+                    {form.formState.errors.referenceLengthFeet.message}
+                  </p>
+                )}
               </FormItem>
             )}
           />
