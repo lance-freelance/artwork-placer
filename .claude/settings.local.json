@@ -20,7 +20,17 @@
       "Read(//home/runner/.config/**)",
       "Bash(find / -maxdepth 4 -name \"*.workflow*\")",
       "Bash(git merge *)",
-      "Bash(git branch *)"
+      "Bash(git branch *)",
+      "Bash(PORT=3737 NODE_ENV=development node --enable-source-maps ./dist/index.mjs)",
+      "Bash(echo \"PID=$!\")",
+      "Read(//tmp/**)",
+      "Bash(curl -s --max-time 5 http://localhost:3737/api/rooms)",
+      "Bash(curl -s http://localhost:3737/api/placements)",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const p=JSON.parse\\(d\\);console.log\\('count:',p.length\\);for\\(const x of p\\)console.log\\(' ',JSON.stringify\\(x\\)\\)}\\)\")",
+      "Bash(curl -s http://localhost:3737/api/art)",
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const a=JSON.parse\\(d\\);console.log\\('count:',a.length\\);for\\(const x of a\\)console.log\\(' ',x.id,'|',x.name,'|',x.realWidthInches+'x'+x.realHeightInches+'in'\\)}\\)\")",
+      "Bash(timeout 60 git push gitsafe-backup main)",
+      "Bash(git rev-list *)"
     ]
   }
 }
