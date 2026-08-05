@@ -55,10 +55,16 @@ export function BandSplitPreview({ imageFilename, bandSplit, onChange }: BandSpl
         onPointerCancel={handlePointerUp}
       >
         {imageFilename ? (
-          <img 
-            src={roomImageUrl(imageFilename)} 
-            className="w-full h-full object-cover pointer-events-none" 
-            alt="Room preview" 
+          /*
+            `object-contain`, matching RoomCanvas, so the line is dragged over
+            the same framing the visitor sees. Under `cover` an off-ratio photo
+            is cropped here but letterboxed on the board, and the split would
+            be saved against a horizon that sits somewhere else on the canvas.
+          */
+          <img
+            src={roomImageUrl(imageFilename)}
+            className="w-full h-full object-contain pointer-events-none"
+            alt="Room preview"
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground font-serif bg-muted/30">

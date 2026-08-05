@@ -175,7 +175,9 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
         setAspectWarning(
           `This image is ${image.naturalWidth}×${image.naturalHeight} ` +
             `(${ratio.toFixed(2)}:1), not the 16:10 the board canvas uses. ` +
-            `It will be cropped or stretched to fit. A 1600×1000px image avoids this.`,
+            `It is shown exactly as uploaded, so it will not fill the canvas — ` +
+            `there will be blank bands beside or above it. Crop it to 16:10 ` +
+            `(1600×1000px is ideal) to avoid this.`,
         );
       } else {
         setAspectWarning(null);
@@ -225,7 +227,9 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
         setAspectWarning(
           `This image is ${image.naturalWidth}×${image.naturalHeight} ` +
             `(${ratio.toFixed(2)}:1), not the 16:10 the board canvas uses. ` +
-            `It will be cropped or stretched to fit. A 1600×1000px image avoids this.`,
+            `It is shown exactly as uploaded, so it will not fill the canvas — ` +
+            `there will be blank bands beside or above it. Crop it to 16:10 ` +
+            `(1600×1000px is ideal) to avoid this.`,
         );
       } else {
         setAspectWarning(null);
@@ -302,8 +306,8 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
                 <Label>Room Image</Label>
                 <p className="text-sm text-muted-foreground mt-1">
                   Upload a 16:10 photograph of the room (1600×1000px is ideal).
-                  The board canvas is 16:10, so anything else will be cropped
-                  or stretched to fit.
+                  The photo is shown exactly as uploaded, so anything other
+                  than 16:10 leaves blank bands beside or above it.
                 </p>
               </div>
               <input

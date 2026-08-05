@@ -9,21 +9,21 @@ import type { ArtObject, Room } from "@workspace/api-zod";
  * draws is worked out at render time against the room's own `wallWidthFeet`,
  * so the same artwork reads correctly in rooms photographed at different
  * fields of view. Each figure below was read off furniture of known size in
- * the photograph — the sofa, the desk, the headboard — then reduced by the
- * board's zoom factor, because the canvas shows the middle ~83% of the photo
- * rather than all of it. They are starting points the calibration tool in the
- * admin panel is meant to refine against the real rooms.
+ * the photograph — the sofa, the desk, the headboard — and measures the whole
+ * frame, because the board shows the photograph exactly as uploaded. They are
+ * starting points the calibration tool in the admin panel is meant to refine
+ * against the real rooms.
  */
 
 export const seedRooms: Room[] = [
   // Curved bouclé sofa (~8'4") spans a little over half the frame.
-  { id: "living-room", name: "Living Room", imageFilename: "living-room.jpg", bandSplit: 58, wallWidthFeet: 12.5 },
+  { id: "living-room", name: "Living Room", imageFilename: "living-room.jpg", bandSplit: 58, wallWidthFeet: 15 },
   // Widest of the four: a long console reads as only a quarter of the frame.
-  { id: "loft", name: "Loft", imageFilename: "loft.jpg", bandSplit: 62, wallWidthFeet: 15 },
+  { id: "loft", name: "Loft", imageFilename: "loft.jpg", bandSplit: 62, wallWidthFeet: 18 },
   // Tightest: the executive desk (~7') fills more than half the width.
-  { id: "office", name: "Office", imageFilename: "office.jpg", bandSplit: 55, wallWidthFeet: 11.25 },
+  { id: "office", name: "Office", imageFilename: "office.jpg", bandSplit: 55, wallWidthFeet: 13.5 },
   // King headboard (~6'8") sits in the wall plane at ~42% of the frame.
-  { id: "primary-suite", name: "Primary Suite", imageFilename: "primary-suite.jpg", bandSplit: 60, wallWidthFeet: 12.9 },
+  { id: "primary-suite", name: "Primary Suite", imageFilename: "primary-suite.jpg", bandSplit: 60, wallWidthFeet: 15.5 },
 ];
 
 /**

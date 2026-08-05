@@ -6,6 +6,7 @@
   "scripts": {
     "hello": "tsx ./src/hello.ts",
     "migrate:real-dimensions": "tsx ./src/migrate-real-dimensions.ts",
+    "migrate:remove-room-zoom": "tsx ./src/migrate-remove-room-zoom.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {

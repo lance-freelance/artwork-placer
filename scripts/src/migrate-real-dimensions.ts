@@ -42,17 +42,17 @@ const KNOWN_ART_INCHES: Record<string, { width: number; height: number }> = {
 };
 
 /**
- * Back-wall widths read off furniture of known size in each photograph, then
- * reduced by the board's 1.2x zoom: the canvas shows the middle ~83% of the
- * photo, so the wall the visitor actually sees is narrower than the wall in
- * the file. These are starting points — the calibration tool in the admin
- * panel exists so they can be corrected against the real rooms.
+ * Back-wall widths read off furniture of known size in each photograph, over
+ * the whole frame: the board shows the photo exactly as uploaded, so the wall
+ * the visitor sees is the wall in the file. These are starting points — the
+ * calibration tool in the admin panel exists so they can be corrected against
+ * the real rooms. Kept in step with `seedRooms`.
  */
 const KNOWN_ROOM_WALL_FEET: Record<string, number> = {
-  'living-room': 12.5,
-  loft: 15,
-  office: 11.25,
-  'primary-suite': 12.9,
+  'living-room': 15,
+  loft: 18,
+  office: 13.5,
+  'primary-suite': 15.5,
 };
 
 /* ------------------------------- Replit DB -------------------------------- */

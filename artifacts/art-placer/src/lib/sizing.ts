@@ -3,26 +3,18 @@ import type { ArtObject, Room } from '../types';
 const INCHES_PER_FOOT = 12;
 
 /**
- * How far the board zooms into a room photograph.
- *
- * RoomCanvas renders the image `object-contain` and then scales it up, so the
- * visible canvas is the middle `1 / ROOM_IMAGE_ZOOM` of the photo rather than
- * all of it. Anything that measures a room has to render it the same way or
- * it measures wall that the visitor never sees — a calibration taken against
- * the full photo comes out too wide by exactly this factor, and every piece
- * in that room then hangs too small.
- *
- * Keep this in step with the scale applied in RoomCanvas.
- */
-export const ROOM_IMAGE_ZOOM = 1.2;
-
-/**
  * How large a piece should appear, as a fraction of the room canvas width.
  *
  * The canvas always spans `room.wallWidthFeet` of real wall, so a piece's
  * share of it is simply its real width over that span. A 48" canvas on a
  * 13'6" wall covers 4/13.5 of the frame; the same piece in a tighter room
  * covers proportionally more.
+ *
+ * `wallWidthFeet` measures the full canvas box, and the board shows room
+ * photographs untouched — no zoom, no crop — so that box is the whole photo.
+ * Anything that measures a room has to frame it the same way, or it measures
+ * wall the visitor never sees and every piece in that room hangs at the wrong
+ * size by exactly the framing difference.
  *
  * Deliberately computed at render time and never stored on the placement:
  * recalibrating a room has to resize everything already hanging in it, and a

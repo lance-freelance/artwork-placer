@@ -3,7 +3,6 @@ import { useStore } from '../state/Store';
 import { ArtObject } from './ArtObject';
 import { cn } from '@/lib/utils';
 import { roomImageUrl } from '../types';
-import { ROOM_IMAGE_ZOOM } from '@/lib/sizing';
 import { PlacementBand } from './PlacementBand';
 
 export function RoomCanvas({ roomId, isActive }: { roomId: string, isActive: boolean }) {
@@ -45,10 +44,7 @@ export function RoomCanvas({ roomId, isActive }: { roomId: string, isActive: boo
     <div 
       ref={containerRef}
       id={isActive ? 'active-room-canvas' : undefined}
-      className={cn(
-        "relative w-full h-full overflow-hidden bg-muted transition-opacity duration-500",
-        isActive ? "opacity-100" : "opacity-0 pointer-events-none"
-      )}
+      className="relative w-full h-full overflow-hidden bg-muted transition-opacity duration-500 opacity-100 rounded-tl-[30px] rounded-tr-[30px] rounded-br-[30px] rounded-bl-[30px]"
     >
       {/*
         `object-contain` is required, not cosmetic: the canvas box is a fixed
@@ -58,25 +54,23 @@ export function RoomCanvas({ roomId, isActive }: { roomId: string, isActive: boo
         every placement, because placements are stored as percentages of this
         box.
 
-        The zoom means this box shows the middle ~83% of the photo, not all of
-        it. Anything that measures a room — the wall calibration tool — must
-        apply the same zoom, or it measures wall that is never on screen. It
-        comes from the shared `ROOM_IMAGE_ZOOM` rather than a local class so
-        the two cannot drift apart.
+        The photo is shown exactly as uploaded: the whole frame, at its own
+        shape, with nothing scaled away at the edges. Anything that measures a
+        room — the wall calibration tool — must frame it identically, or it
+        measures wall that is never on screen. An off-ratio photo letterboxes
+        inside the box rather than being cropped to hide it; calibrating that
+        room measures the same box, so its sizing stays consistent.
       */}
       <img
         src={roomImageUrl(room.imageFilename)}
         alt={room.name}
         draggable={false}
         className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none"
-        style={{ transform: `scale(${ROOM_IMAGE_ZOOM})` }}
       />
-      
       {/* Placements */}
       {roomPlacements.map(p => (
         <ArtObject key={p.objectId} placement={p} />
       ))}
-
       {/* Placement Band Highlights and Crosshair */}
       {isActive && <PlacementBand room={room} canvasRef={containerRef} />}
     </div>

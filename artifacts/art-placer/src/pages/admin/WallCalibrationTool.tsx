@@ -3,7 +3,6 @@ import { roomImageUrl } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  ROOM_IMAGE_ZOOM,
   toDecimalFeet,
   wallWidthFromReference,
   formatFeetInches,
@@ -316,15 +315,15 @@ export function WallCalibrationTool({
       >
         {imageFilename ? (
           /*
-            Framed exactly as RoomCanvas frames it — `object-contain` plus the
-            same shared zoom — so this box shows precisely the wall the visitor
-            sees. Measuring the untouched photo instead would include the
-            cropped margins and calibrate the room too wide by the zoom factor.
+            Framed exactly as RoomCanvas frames it — a 16:10 box, the photo
+            `object-contain` inside it and otherwise untouched — so this box
+            shows precisely the wall the visitor sees. Framing it any other way
+            here measures a different span of wall than the board renders, and
+            every piece in the room then hangs at the wrong size.
           */
           <img
             src={roomImageUrl(imageFilename)}
             className="w-full h-full object-contain pointer-events-none"
-            style={{ transform: `scale(${ROOM_IMAGE_ZOOM})` }}
             alt="Room to calibrate"
           />
         ) : (
