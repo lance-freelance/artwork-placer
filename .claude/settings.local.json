@@ -13,7 +13,14 @@
       "Bash(timeout 300 pnpm test)",
       "Bash(curl -s --max-time 10 http://localhost:3737/api/rooms)",
       "Bash(git checkout *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(pkill -f \"dist/index.mjs\")",
+      "Bash(curl -s --max-time 2 http://localhost:3737/api/rooms)",
+      "Read(//home/runner/.config/**)",
+      "Bash(find / -maxdepth 4 -name \"*.workflow*\")",
+      "Bash(git merge *)",
+      "Bash(git branch *)"
     ]
   }
 }
