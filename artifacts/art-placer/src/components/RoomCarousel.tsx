@@ -45,7 +45,7 @@ export function RoomCarousel() {
   return (
     <div className="relative w-full h-full">
       {/* Embla viewport — fills the matted canvas box */}
-      <div className="overflow-hidden w-full h-full" ref={emblaRef}>
+      <div className="overflow-hidden w-full h-full rounded-tl-[30px] rounded-tr-[30px] rounded-br-[30px] rounded-bl-[30px]" ref={emblaRef}>
         <div className="flex h-full touch-pan-y rounded-tl-[30px] rounded-tr-[30px] rounded-br-[30px] rounded-bl-[30px]">
           {rooms.map(room => (
             <div key={room.id} className="flex-[0_0_100%] min-w-0 h-full relative border-t-[0px] border-r-[0px] border-b-[0px] border-l-[0px] rounded-tl-[30px] rounded-tr-[30px] rounded-br-[30px] rounded-bl-[30px]">
