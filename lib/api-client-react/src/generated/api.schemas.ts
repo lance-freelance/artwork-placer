@@ -77,6 +77,8 @@ export interface Room {
      * @exclusiveMinimum 0
      */
   referenceLengthFeet?: number;
+  /** Whether this room is available in the public placement experience. */
+  isVisible?: boolean;
 }
 
 export interface RoomInput {
@@ -99,6 +101,8 @@ export interface RoomInput {
      * @exclusiveMinimum 0
      */
   referenceLengthFeet: number;
+  /** Whether this room is available in the public placement experience. */
+  isVisible?: boolean;
 }
 
 export interface RoomUpdate {
@@ -115,6 +119,8 @@ export interface RoomUpdate {
   wallWidthFeet?: number;
   /** @exclusiveMinimum 0 */
   referenceLengthFeet?: number;
+  /** Whether this room is available in the public placement experience. */
+  isVisible?: boolean;
 }
 
 export type ObjectType = typeof ObjectType[keyof typeof ObjectType];
@@ -202,4 +208,11 @@ export interface Placement {
 }
 
 export type PlacementSet = Placement[];
+
+export type ListRoomsParams = {
+/**
+ * Include rooms hidden from the public placement experience. Used by the admin panel.
+ */
+includeHidden?: boolean;
+};
 

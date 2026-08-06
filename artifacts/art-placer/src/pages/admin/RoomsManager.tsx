@@ -15,7 +15,7 @@ import { roomImageUrl } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 
 export function RoomsManager() {
-  const { data: rooms, isLoading } = useListRooms();
+  const { data: rooms, isLoading } = useListRooms({ includeHidden: true });
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const deleteRoom = useDeleteRoom();
@@ -109,7 +109,9 @@ export function RoomsManager() {
                   <div className="p-3 bg-card flex justify-between items-center">
                     <div>
                       <h3 className="font-medium text-sm truncate">{room.name}</h3>
-                      <p className="text-xs text-muted-foreground">Split: {room.bandSplit}%</p>
+                       <p className="text-xs text-muted-foreground">
+                         Split: {room.bandSplit}% · {room.isVisible === false ? 'Hidden from UX' : 'Visible in UX'}
+                       </p>
                     </div>
                   </div>
                 </Card>

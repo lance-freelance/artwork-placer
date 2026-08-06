@@ -28,4 +28,6 @@ export interface Room {
      * @exclusiveMinimum 0
      */
   referenceLengthFeet?: number;
+  /** Whether this room is available in the public placement experience. */
+  isVisible?: boolean;
 }

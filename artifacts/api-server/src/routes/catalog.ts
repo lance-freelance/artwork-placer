@@ -24,8 +24,14 @@ const router: IRouter = Router();
 
 /* ------------------------------ rooms ------------------------------ */
 
-router.get("/rooms", async (_req, res): Promise<void> => {
-  res.json(ListRoomsResponse.parse(await getRooms()));
+router.get("/rooms", async (req, res): Promise<void> => {
+  const includeHidden = req.query.includeHidden === "true";
+  const rooms = await getRooms();
+  res.json(
+    ListRoomsResponse.parse(
+      includeHidden ? rooms : rooms.filter((room) => room.isVisible !== false),
+    ),
+  );
 });
 
 router.post("/rooms", async (req, res): Promise<void> => {
@@ -41,6 +47,7 @@ router.post("/rooms", async (req, res): Promise<void> => {
     const created: Room = {
       id: makeId(parsed.data.name, rooms.map((r) => r.id)),
       ...parsed.data,
+      isVisible: parsed.data.isVisible ?? true,
     };
     await setRooms([...rooms, created]);
     return created;

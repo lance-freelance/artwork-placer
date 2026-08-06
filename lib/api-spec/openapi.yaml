@@ -180,6 +180,13 @@ paths:
       operationId: listRooms
       tags: [catalog]
       summary: List rooms
+      parameters:
+        - name: includeHidden
+          in: query
+          required: false
+          description: Include rooms hidden from the public placement experience. Used by the admin panel.
+          schema:
+            type: boolean
       responses:
         "200":
           description: Rooms in display order
@@ -559,6 +566,9 @@ components:
             door frame, and gains a stored value the next time it is saved.
           type: number
           exclusiveMinimum: 0
+        isVisible:
+          description: Whether this room is available in the public placement experience.
+          type: boolean
       required:
         - id
         - name
@@ -591,6 +601,9 @@ components:
             record it.
           type: number
           exclusiveMinimum: 0
+        isVisible:
+          description: Whether this room is available in the public placement experience.
+          type: boolean
       required:
         - name
         - imageFilename
@@ -617,6 +630,9 @@ components:
         referenceLengthFeet:
           type: number
           exclusiveMinimum: 0
+        isVisible:
+          description: Whether this room is available in the public placement experience.
+          type: boolean
 
     ArtObject:
       type: object

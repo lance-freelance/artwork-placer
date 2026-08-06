@@ -24,13 +24,13 @@ import type { ArtObject, Room } from "@workspace/api-zod";
  */
 export const seedRooms: Room[] = [
   // Curved bouclé sofa (~8'4") spans a little over half the frame.
-  { id: "living-room", name: "Living Room", imageFilename: "living-room.jpg", bandSplit: 58, wallWidthFeet: 15, referenceLengthFeet: 8.3333 },
+  { id: "living-room", name: "Living Room", imageFilename: "living-room.jpg", bandSplit: 58, wallWidthFeet: 15, referenceLengthFeet: 8.3333, isVisible: true },
   // Widest of the four: a 4'6" console reads as only a quarter of the frame.
-  { id: "loft", name: "Loft", imageFilename: "loft.jpg", bandSplit: 62, wallWidthFeet: 18, referenceLengthFeet: 4.5 },
+  { id: "loft", name: "Loft", imageFilename: "loft.jpg", bandSplit: 62, wallWidthFeet: 18, referenceLengthFeet: 4.5, isVisible: true },
   // Tightest: the executive desk (~7') fills more than half the width.
-  { id: "office", name: "Office", imageFilename: "office.jpg", bandSplit: 55, wallWidthFeet: 13.5, referenceLengthFeet: 7 },
+  { id: "office", name: "Office", imageFilename: "office.jpg", bandSplit: 55, wallWidthFeet: 13.5, referenceLengthFeet: 7, isVisible: true },
   // King headboard (~6'8") sits in the wall plane at ~42% of the frame.
-  { id: "primary-suite", name: "Primary Suite", imageFilename: "primary-suite.jpg", bandSplit: 60, wallWidthFeet: 15.5, referenceLengthFeet: 6.6667 },
+  { id: "primary-suite", name: "Primary Suite", imageFilename: "primary-suite.jpg", bandSplit: 60, wallWidthFeet: 15.5, referenceLengthFeet: 6.6667, isVisible: true },
 ];
 
 /**

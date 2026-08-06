@@ -13,6 +13,7 @@ export * from './artObject';
 export * from './artUpdate';
 export * from './errorResponse';
 export * from './healthStatus';
+export * from './listRoomsParams';
 export * from './mediaLibrary';
 export * from './objectType';
 export * from './placement';

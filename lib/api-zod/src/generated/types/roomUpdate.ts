@@ -20,4 +20,6 @@ export interface RoomUpdate {
   wallWidthFeet?: number;
   /** @exclusiveMinimum 0 */
   referenceLengthFeet?: number;
+  /** Whether this room is available in the public placement experience. */
+  isVisible?: boolean;
 }

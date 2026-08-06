@@ -46,6 +46,7 @@ import { Crop, Loader2, Upload } from 'lucide-react';
 import { roomImageUrl } from '@/types';
 import { DEFAULT_REFERENCE_LENGTH_FEET } from '@/lib/sizing';
 import { useEffect, useRef, useState } from 'react';
+import { Switch } from '@/components/ui/switch';
 
 const roomSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -55,6 +56,7 @@ const roomSchema = z.object({
   referenceLengthFeet: z.coerce
     .number()
     .positive("Set a reference length for the calibration line"),
+  isVisible: z.boolean(),
 });
 
 type RoomFormValues = z.infer<typeof roomSchema>;
@@ -100,6 +102,7 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
       // is the reading of their saved width that is already true.
       referenceLengthFeet:
         room?.referenceLengthFeet ?? DEFAULT_REFERENCE_LENGTH_FEET,
+      isVisible: room?.isVisible ?? true,
     },
   });
 
@@ -120,6 +123,7 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
         wallWidthFeet: room.wallWidthFeet,
         referenceLengthFeet:
           room.referenceLengthFeet ?? DEFAULT_REFERENCE_LENGTH_FEET,
+        isVisible: room.isVisible ?? true,
       });
       // Say so if an already-saved room's image is off-ratio too.
       void checkAspect(room.imageFilename);
@@ -130,6 +134,7 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
         bandSplit: 50,
         wallWidthFeet: 13.5,
         referenceLengthFeet: DEFAULT_REFERENCE_LENGTH_FEET,
+        isVisible: true,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -323,6 +328,30 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
                   <Input placeholder="e.g. Minimalist Gallery" {...field} />
                 </FormControl>
                 <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="isVisible"
+            render={({ field }) => (
+              <FormItem className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-4">
+                <div className="space-y-1">
+                  <FormLabel>Show in placement experience</FormLabel>
+                  <FormDescription>
+                    {field.value
+                      ? 'Visitors can select this room in the art placer.'
+                      : 'This room stays available in admin but is hidden from visitors.'}
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    aria-label="Show room in placement experience"
+                  />
+                </FormControl>
               </FormItem>
             )}
           />

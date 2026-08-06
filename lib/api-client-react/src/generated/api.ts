@@ -27,6 +27,7 @@ import type {
   ArtUpdate,
   ErrorResponse,
   HealthStatus,
+  ListRoomsParams,
   MediaLibrary,
   Placement,
   PlacementSet,
@@ -520,20 +521,27 @@ export function useGetRoomImage<TData = Awaited<ReturnType<typeof getRoomImage>>
 
 
 
-export const getListRoomsUrl = () => {
+export const getListRoomsUrl = (params?: ListRoomsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/rooms`
+  return stringifiedParams.length > 0 ? `/api/rooms?${stringifiedParams}` : `/api/rooms`
 }
 
 /**
  * @summary List rooms
  */
-export const listRooms = async ( options?: Parameters<typeof customFetch>[1]): Promise<Room[]> => {
+export const listRooms = async (params?: ListRoomsParams, options?: Parameters<typeof customFetch>[1]): Promise<Room[]> => {
 
-  return customFetch<Room[]>(getListRoomsUrl(),
+  return customFetch<Room[]>(getListRoomsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -546,23 +554,23 @@ export const listRooms = async ( options?: Parameters<typeof customFetch>[1]): P
 
 
 
-export const getListRoomsQueryKey = () => {
+export const getListRoomsQueryKey = (params?: ListRoomsParams,) => {
     return [
-    `/api/rooms`
+    `/api/rooms`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListRoomsQueryOptions = <TData = Awaited<ReturnType<typeof listRooms>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRooms>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListRoomsQueryOptions = <TData = Awaited<ReturnType<typeof listRooms>>, TError = ErrorType<unknown>>(params?: ListRoomsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRooms>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListRoomsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListRoomsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRooms>>> = ({ signal }) => listRooms({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listRooms>>> = ({ signal }) => listRooms(params, { signal, ...requestOptions });
 
 
 
@@ -580,11 +588,11 @@ export type ListRoomsQueryError = ErrorType<unknown>
  */
 
 export function useListRooms<TData = Awaited<ReturnType<typeof listRooms>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRooms>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListRoomsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listRooms>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListRoomsQueryOptions(options)
+  const queryOptions = getListRoomsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
