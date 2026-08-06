@@ -92,12 +92,26 @@ function GlobalDragLayer() {
       animate={{ scale: 1.06 }}
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
     >
-      <img
-        src={artImageUrl(obj.fullImageFilename)}
-        alt=""
-        draggable={false}
-        className="w-full h-full object-contain drop-shadow-[0_22px_28px_rgba(50,40,30,0.32)]"
-      />
+      {/*
+        The thumbnail sits underneath as an instant stand-in: it is guaranteed
+        already-loaded (the tray rendered it), so the ghost is visible from the
+        very first frame of the very first drag even if the full-size fetch is
+        still in flight. The full image paints over it the moment it arrives.
+      */}
+      <div className="relative w-full h-full drop-shadow-[0_22px_28px_rgba(50,40,30,0.32)]">
+        <img
+          src={artImageUrl(obj.thumbnailFilename)}
+          alt=""
+          draggable={false}
+          className="absolute inset-0 w-full h-full object-contain"
+        />
+        <img
+          src={artImageUrl(obj.fullImageFilename)}
+          alt=""
+          draggable={false}
+          className="relative w-full h-full object-contain"
+        />
+      </div>
     </motion.div>
   );
 }
