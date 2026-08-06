@@ -7,6 +7,7 @@ import {
 } from '@workspace/api-client-react';
 import { heightPercentOf, isValidBand } from '@/lib/placement';
 import { abortActivePointerDrags } from '../hooks/usePointerDrag';
+import { artImageUrl } from '../types';
 import type { ArtObject, Placement, Room } from '../types';
 
 interface DragState {
@@ -117,6 +118,18 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   const lastSavedRef = useRef<string | null>(null);
   const saveChainRef = useRef<Promise<unknown>>(Promise.resolve());
   const [saveFailed, setSaveFailed] = useState(false);
+
+  // The tray only ever loads thumbnails, but the drag ghost renders the
+  // full-size image — so the first drag of each piece would otherwise wait on
+  // a multi-megabyte fetch and appear blank. Warm the cache as soon as the
+  // catalog arrives.
+  useEffect(() => {
+    if (!artObjects) return;
+    for (const obj of artObjects) {
+      const img = new Image();
+      img.src = artImageUrl(obj.fullImageFilename);
+    }
+  }, [artObjects]);
 
   useEffect(() => {
     if (hydratedRef.current) return;

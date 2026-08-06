@@ -14,7 +14,6 @@ export function TrayItem({ objectId }: { objectId: string }) {
   const {
     setDragState,
     dragState,
-    roomWidth,
     selectedObjectId,
     setSelectedObjectId,
     placements,
@@ -42,7 +41,13 @@ export function TrayItem({ objectId }: { objectId: string }) {
       // also makes the matching onDragEnd a no-op, so the gesture is inert
       // rather than half-live.
       if (!activeRoom) return;
-      const width = roomWidth * scaleFor(obj, activeRoom);
+      // Measure the canvas live rather than trusting the store's roomWidth:
+      // a first drag fired before RoomCanvas has reported its width would
+      // otherwise size the ghost off the 1000px default, and with no canvas
+      // registered at all the gesture must stay inert.
+      const canvasWidth = canvasElRef.current?.getBoundingClientRect().width;
+      if (!canvasWidth) return;
+      const width = canvasWidth * scaleFor(obj, activeRoom);
       const height = width / aspectRatioOf(obj);
       // Held in a ref rather than read back from dragState: a quick flick can
       // reach pointerup before React has committed the drag-start render.
