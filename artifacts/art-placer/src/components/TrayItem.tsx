@@ -85,6 +85,26 @@ export function TrayItem({ objectId }: { objectId: string }) {
           ...geometry,
         });
         if (result.action === 'place') placeObject(result.placement);
+        // Temporary: drop-resolution instrumentation for the silent-drop bug.
+        // Only ever active alongside src/dev/dragDiagnostics.ts (?debugDrag=1);
+        // remove with it once the cause is pinned down.
+        (window as unknown as { __dragLog?: unknown }).__dragLog &&
+          console.log('[drag] resolveDrop', {
+            action: result.action,
+            room: activeRoom.id,
+            bandSplit: activeRoom.bandSplit,
+            clientX: p.clientX,
+            clientY: p.clientY,
+            geometry,
+            rect: canvasElRef.current?.getBoundingClientRect().toJSON(),
+            placement: result.action === 'place' ? result.placement : null,
+          });
+      } else {
+        (window as unknown as { __dragLog?: unknown }).__dragLog &&
+          console.log('[drag] drop skipped', {
+            hasGeometry: !!geometry,
+            activeRoomId,
+          });
       }
       setDragState(null);
     },

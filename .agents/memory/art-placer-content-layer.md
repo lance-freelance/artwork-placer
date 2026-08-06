@@ -190,3 +190,6 @@ rejection failed."
 
 **How to apply:** when asking an agent to verify band rejection, tell it to
 compare the placement's `y` before and after, not whether the record exists.
+
+## Preview and live share one database
+The published app and the dev preview both read/write the same Replit DB via the same api-server data — rooms, band splits, and placements are identical in both. A "works live but not in preview" report can never be a data split; compare like-for-like (same device, same tray state) before suspecting the code diff. Also: placement saves are debounced (~400ms), so an immediate GET after a drop can falsely look like a failed placement.
