@@ -45,8 +45,10 @@ const SIDE_CONTROLS = '(min-width: 820px) and (min-aspect-ratio: 5/4)';
  */
 function layoutVars(chromeTop: number, chromeBottom: number): CSSProperties {
   return {
-    ['--edge' as string]: 'clamp(12px, 4vmin, 40px)',
-    ['--gap' as string]: 'clamp(10px, 1.8vmin, 20px)',
+    // Kept deliberately slim: every pixel spent here is subtracted from the
+    // room box, and the user asked for the photograph to dominate the frame.
+    ['--edge' as string]: 'clamp(8px, 1.5vmin, 20px)',
+    ['--gap' as string]: 'clamp(6px, 1vmin, 12px)',
     ['--chrome-top' as string]: `${chromeTop}px`,
     ['--chrome-bottom' as string]: `${chromeBottom}px`,
 
