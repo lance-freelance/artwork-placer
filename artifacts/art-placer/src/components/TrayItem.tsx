@@ -103,7 +103,7 @@ export function TrayItem({ objectId }: { objectId: string }) {
       }}
       className="relative shrink-0 cursor-grab active:cursor-grabbing rounded-sm transition-transform duration-200 outline-none hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ml-[14px] mr-[14px]"
       style={{
-        height: 'clamp(48px, 7vh, 72px)',
+        height: 'clamp(56px, 9vh, 84px)',
         aspectRatio: aspectRatioOf(obj),
         ...handlers.style,
       }}

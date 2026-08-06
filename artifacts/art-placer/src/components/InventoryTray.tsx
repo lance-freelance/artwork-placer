@@ -41,7 +41,7 @@ export function InventoryTray() {
     // beneath the photograph rather than matching its edges. Safe to narrow:
     // the strip scrolls horizontally and every item is shrink-0, so height
     // stays width-independent and MainLayout's measurement cannot oscillate.
-    <div className="relative w-4/5 mx-auto bg-background/85 backdrop-blur-md rounded-2xl shadow-[0_10px_30px_-12px_rgba(74,63,48,0.45)] px-12 pt-2.5 pb-2.5">
+    <div className="relative w-4/5 mx-auto bg-background/85 backdrop-blur-md rounded-2xl shadow-[0_10px_30px_-12px_rgba(74,63,48,0.45)] px-12 py-4 pt-[15px] pb-[15px] mt-[0px] mb-[0px] ml-[0px] mr-[0px]">
       <button
         onClick={() => scrollBy(-220)}
         className={`${arrowBase} left-1.5 ${canScrollLeft ? arrowActive : arrowDimmed}`}
@@ -53,7 +53,7 @@ export function InventoryTray() {
       <div
         ref={scrollRef}
         onScroll={checkScroll}
-        className="flex gap-5 overflow-x-auto snap-x snap-mandatory hide-scrollbar items-center min-h-[64px] pl-[21px] pr-[21px]"
+        className="flex gap-5 overflow-x-auto snap-x snap-mandatory hide-scrollbar items-center min-h-[90px] pl-[21px] pr-[21px]"
       >
         {artObjects.map(obj => (
           <div key={obj.id} className="snap-start shrink-0 flex items-center justify-center ml-[9px] mr-[9px]">
