@@ -48,7 +48,7 @@ export function RoomCarousel() {
       <div className="overflow-hidden w-full h-full" ref={emblaRef}>
         <div className="flex h-full touch-pan-y">
           {rooms.map(room => (
-            <div key={room.id} className="flex-[0_0_100%] min-w-0 h-full relative">
+            <div key={room.id} className="flex-[0_0_100%] min-w-0 h-full relative border-t-[30px] border-r-[30px] border-b-[30px] border-l-[30px]">
               <RoomCanvas roomId={room.id} isActive={room.id === activeRoomId} />
             </div>
           ))}
