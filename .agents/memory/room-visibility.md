@@ -1,10 +1,10 @@
 ---
-name: Room visibility compatibility
-description: The public room catalog supports hiding rooms while preserving older catalog records.
+name: Catalog visibility compatibility
+description: The public room and art catalogs support hiding items while preserving older records.
 ---
 
-An omitted room visibility flag means visible; only an explicit `false` hides a room from the public placement experience.
+An omitted catalog visibility flag means visible; only an explicit `false` hides a room or art object from the public placement experience.
 
-**Why:** The catalog predates this setting, so treating missing values as hidden would make existing rooms disappear when the feature is introduced.
+**Why:** The catalogs predate these settings, so treating missing values as hidden would make existing rooms or art disappear when the feature is introduced.
 
-**How to apply:** Keep the admin catalog able to read all rooms, filter only explicit `false` values from the public catalog, and default newly created rooms to visible.
+**How to apply:** Keep the admin catalogs able to read all items, filter only explicit `false` values from public catalog responses, and default newly created items to visible.

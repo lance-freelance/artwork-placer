@@ -103,8 +103,14 @@ router.delete("/rooms/:roomId", async (req, res): Promise<void> => {
 
 /* ------------------------------- art ------------------------------- */
 
-router.get("/art", async (_req, res): Promise<void> => {
-  res.json(ListArtResponse.parse(await getArt()));
+router.get("/art", async (req, res): Promise<void> => {
+  const includeHidden = req.query.includeHidden === "true";
+  const art = await getArt();
+  res.json(
+    ListArtResponse.parse(
+      includeHidden ? art : art.filter((object) => object.isVisible !== false),
+    ),
+  );
 });
 
 router.post("/art", async (req, res): Promise<void> => {
@@ -120,6 +126,7 @@ router.post("/art", async (req, res): Promise<void> => {
     const created: ArtObject = {
       id: makeId(parsed.data.name, art.map((a) => a.id)),
       ...parsed.data,
+      isVisible: parsed.data.isVisible ?? true,
     };
     await setArt([...art, created]);
     return created;

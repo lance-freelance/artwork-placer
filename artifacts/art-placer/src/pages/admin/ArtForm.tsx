@@ -46,6 +46,7 @@ import {
 import { ImageOff, Loader2, Upload, Wand2 } from 'lucide-react';
 import { artImageUrl } from '@/types';
 import { aspectRatioOf } from '@/lib/sizing';
+import { Switch } from '@/components/ui/switch';
 
 const artSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -55,6 +56,7 @@ const artSchema = z.object({
   realWidthInches: z.coerce.number().positive("Must be > 0"),
   realHeightInches: z.coerce.number().positive("Must be > 0"),
   resizeRangePercent: z.coerce.number().min(0).max(100),
+  isVisible: z.boolean(),
 });
 
 type ArtFormValues = z.infer<typeof artSchema>;
@@ -108,6 +110,7 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
       realWidthInches: art?.realWidthInches ?? 24,
       realHeightInches: art?.realHeightInches ?? 36,
       resizeRangePercent: art?.resizeRangePercent ?? 20,
+      isVisible: art?.isVisible ?? true,
     },
   });
 
@@ -130,6 +133,7 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
         realWidthInches: art.realWidthInches,
         realHeightInches: art.realHeightInches,
         resizeRangePercent: art.resizeRangePercent,
+        isVisible: art.isVisible ?? true,
       });
     } else {
       form.reset({
@@ -140,6 +144,7 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
         realWidthInches: 24,
         realHeightInches: 36,
         resizeRangePercent: 20,
+        isVisible: true,
       });
     }
   }, [art, form]);
@@ -342,6 +347,30 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
               )}
             />
           </div>
+
+          <FormField
+            control={form.control}
+            name="isVisible"
+            render={({ field }) => (
+              <FormItem className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-4">
+                <div className="space-y-1">
+                  <FormLabel>Show in placement experience</FormLabel>
+                  <FormDescription>
+                    {field.value
+                      ? 'Visitors can find this piece in the art tray.'
+                      : 'This piece stays available in admin but is hidden from visitors.'}
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    aria-label="Show art in placement experience"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
 
           <div className="space-y-4 p-5 bg-muted/30 rounded-lg border border-border">
             <div className="flex items-center justify-between gap-4">

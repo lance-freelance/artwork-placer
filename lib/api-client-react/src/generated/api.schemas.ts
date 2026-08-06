@@ -153,6 +153,8 @@ export interface ArtObject {
      * @maximum 100
      */
   resizeRangePercent: number;
+  /** Whether this art object is available in the public placement experience. */
+  isVisible?: boolean;
 }
 
 export interface ArtInput {
@@ -172,6 +174,8 @@ export interface ArtInput {
      * @maximum 100
      */
   resizeRangePercent: number;
+  /** Whether this art object is available in the public placement experience. */
+  isVisible?: boolean;
 }
 
 export interface ArtUpdate {
@@ -191,6 +195,8 @@ export interface ArtUpdate {
      * @maximum 100
      */
   resizeRangePercent?: number;
+  /** Whether this art object is available in the public placement experience. */
+  isVisible?: boolean;
 }
 
 export interface Placement {
@@ -212,6 +218,13 @@ export type PlacementSet = Placement[];
 export type ListRoomsParams = {
 /**
  * Include rooms hidden from the public placement experience. Used by the admin panel.
+ */
+includeHidden?: boolean;
+};
+
+export type ListArtParams = {
+/**
+ * Include art objects hidden from the public placement experience. Used by the admin panel.
  */
 includeHidden?: boolean;
 };

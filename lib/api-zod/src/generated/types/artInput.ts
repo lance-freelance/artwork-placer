@@ -24,4 +24,6 @@ export interface ArtInput {
      * @maximum 100
      */
   resizeRangePercent: number;
+  /** Whether this art object is available in the public placement experience. */
+  isVisible?: boolean;
 }

@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 
 export function ArtManager() {
-  const { data: artItems, isLoading } = useListArt();
+  const { data: artItems, isLoading } = useListArt({ includeHidden: true });
   const [selectedArtId, setSelectedArtId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const deleteArt = useDeleteArt();
@@ -115,6 +115,9 @@ export function ArtManager() {
                         {item.realWidthInches}" x {item.realHeightInches}"
                       </span>
                     </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {item.isVisible === false ? 'Hidden from UX' : 'Visible in UX'}
+                    </p>
                   </div>
                 </Card>
               ))

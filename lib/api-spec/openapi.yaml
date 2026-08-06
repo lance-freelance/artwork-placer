@@ -281,6 +281,13 @@ paths:
       operationId: listArt
       tags: [catalog]
       summary: List art objects
+      parameters:
+        - name: includeHidden
+          in: query
+          required: false
+          description: Include art objects hidden from the public placement experience. Used by the admin panel.
+          schema:
+            type: boolean
       responses:
         "200":
           description: The inventory
@@ -666,6 +673,9 @@ components:
           type: number
           minimum: 0
           maximum: 100
+        isVisible:
+          description: Whether this art object is available in the public placement experience.
+          type: boolean
       required:
         - id
         - name
@@ -706,6 +716,9 @@ components:
           type: number
           minimum: 0
           maximum: 100
+        isVisible:
+          description: Whether this art object is available in the public placement experience.
+          type: boolean
       required:
         - name
         - type
@@ -739,6 +752,9 @@ components:
           type: number
           minimum: 0
           maximum: 100
+        isVisible:
+          description: Whether this art object is available in the public placement experience.
+          type: boolean
 
     Placement:
       type: object

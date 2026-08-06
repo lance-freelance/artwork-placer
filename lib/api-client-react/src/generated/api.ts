@@ -27,6 +27,7 @@ import type {
   ArtUpdate,
   ErrorResponse,
   HealthStatus,
+  ListArtParams,
   ListRoomsParams,
   MediaLibrary,
   Placement,
@@ -819,20 +820,27 @@ export const useDeleteRoom = <TError = ErrorType<ErrorResponse>,
       return useMutation(getDeleteRoomMutationOptions(options));
     }
 
-export const getListArtUrl = () => {
+export const getListArtUrl = (params?: ListArtParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/art`
+  return stringifiedParams.length > 0 ? `/api/art?${stringifiedParams}` : `/api/art`
 }
 
 /**
  * @summary List art objects
  */
-export const listArt = async ( options?: Parameters<typeof customFetch>[1]): Promise<ArtObject[]> => {
+export const listArt = async (params?: ListArtParams, options?: Parameters<typeof customFetch>[1]): Promise<ArtObject[]> => {
 
-  return customFetch<ArtObject[]>(getListArtUrl(),
+  return customFetch<ArtObject[]>(getListArtUrl(params),
   {
     ...options,
     method: 'GET'
@@ -845,23 +853,23 @@ export const listArt = async ( options?: Parameters<typeof customFetch>[1]): Pro
 
 
 
-export const getListArtQueryKey = () => {
+export const getListArtQueryKey = (params?: ListArtParams,) => {
     return [
-    `/api/art`
+    `/api/art`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getListArtQueryOptions = <TData = Awaited<ReturnType<typeof listArt>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listArt>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getListArtQueryOptions = <TData = Awaited<ReturnType<typeof listArt>>, TError = ErrorType<unknown>>(params?: ListArtParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listArt>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getListArtQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getListArtQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof listArt>>> = ({ signal }) => listArt({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listArt>>> = ({ signal }) => listArt(params, { signal, ...requestOptions });
 
 
 
@@ -879,11 +887,11 @@ export type ListArtQueryError = ErrorType<unknown>
  */
 
 export function useListArt<TData = Awaited<ReturnType<typeof listArt>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listArt>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: ListArtParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listArt>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getListArtQueryOptions(options)
+  const queryOptions = getListArtQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
