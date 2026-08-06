@@ -43,7 +43,7 @@ export function RoomCarousel() {
   // re-measures slide offsets for us.
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full rounded-tl-[30px] rounded-tr-[30px] rounded-br-[30px] rounded-bl-[30px]">
       {/* Embla viewport — fills the matted canvas box */}
       <div className="overflow-hidden w-full h-full rounded-tl-[30px] rounded-tr-[30px] rounded-br-[30px] rounded-bl-[30px]" ref={emblaRef}>
         <div className="flex h-full touch-pan-y rounded-tl-[30px] rounded-tr-[30px] rounded-br-[30px] rounded-bl-[30px]">
