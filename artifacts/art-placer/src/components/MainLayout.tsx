@@ -115,7 +115,10 @@ export function MainLayout() {
       // Tabs, photo and tray are one centred column rather than three things
       // pinned to three viewport edges: the gaps between them stay tight at any
       // size and the leftover matte collects outside the group.
-      className="h-[100dvh] w-full relative overflow-hidden bg-[#C9BFAE] flex flex-col items-center justify-center"
+      // select-none is desktop insurance: a mouse selection anchored outside a
+      // draggable (on the matte) could otherwise sweep the blue ::selection
+      // highlight across the artwork images while dragging.
+      className="h-[100dvh] w-full relative overflow-hidden bg-[#C9BFAE] flex flex-col items-center justify-center select-none"
       style={{
         ...layoutVars(topChromeH, bottomChromeH),
         paddingTop: 'var(--edge)',

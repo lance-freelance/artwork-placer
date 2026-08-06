@@ -106,6 +106,13 @@ export function usePointerDrag({
   const onPointerDown = useCallback((e: React.PointerEvent) => {
     if (e.button !== 0) return;
     e.stopPropagation();
+    // Desktop/mouse-specific: without this, mousedown anchors a native text
+    // selection, and rapid consecutive drags read as double/triple-clicks that
+    // sweep the ::selection highlight (a blue tint) across the artwork images.
+    // Touch is unaffected — touch-action and pointer capture already own that
+    // path. Side effect: click-focus is suppressed, which is fine here since
+    // draggables style focus via focus-visible (keyboard Tab still focuses).
+    e.preventDefault();
     const el = e.currentTarget as HTMLElement;
     el.setPointerCapture(e.pointerId);
     capture.current = { el, pointerId: e.pointerId };
