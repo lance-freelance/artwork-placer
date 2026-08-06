@@ -165,7 +165,7 @@ export function MainLayout() {
         filling the window means cover-scaling the photo and softening it.
       */}
       <div
-        className="relative overflow-hidden rounded-[2px] shrink-0 ring-1 ring-[#5b503f]/20 shadow-[0_22px_55px_-20px_rgba(74,63,48,0.5)]"
+        className="relative overflow-hidden rounded-[30px] shrink-0 ring-1 ring-[#5b503f]/20 shadow-[0_22px_55px_-20px_rgba(74,63,48,0.5)]"
         style={{ width: 'var(--box-w)', height: 'var(--box-h)' }}
       >
         <RoomCarousel />
