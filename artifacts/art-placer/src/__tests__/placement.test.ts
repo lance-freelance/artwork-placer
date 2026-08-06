@@ -102,13 +102,19 @@ function grabCentre(object: ArtObject) {
 // ---------------------------------------------------------------------------
 
 describe('isValidBand', () => {
-  it('judges wall art on its centre, ignoring its height', () => {
+  it('judges wall art on its top, letting its bottom run past the split', () => {
     expect(isValidBand('wall', 30, 70, 30)).toBe(true);
-    expect(isValidBand('wall', 69.9, 70, 30)).toBe(true);
-    expect(isValidBand('wall', 70, 70, 30)).toBe(false);
-    expect(isValidBand('wall', 80, 70, 30)).toBe(false);
-    // The height argument must not move the wall answer either way.
-    expect(isValidBand('wall', 30, 70, 0)).toBe(isValidBand('wall', 30, 70, 90));
+    // Centre below the split, but a 30%-tall piece still hangs from 65 — most
+    // of its surface is on the wall, and the centre-only rule refused it.
+    expect(isValidBand('wall', 80, 70, 30)).toBe(true);
+    // Hung low enough that even its top edge has left the wall.
+    expect(isValidBand('wall', 90, 70, 30)).toBe(false);
+    // Top exactly on the split is already off the wall.
+    expect(isValidBand('wall', 85, 70, 30)).toBe(false);
+    expect(isValidBand('wall', 84.9, 70, 30)).toBe(true);
+    // A taller piece hung at the same spot reaches further up the wall.
+    expect(isValidBand('wall', 80, 70, 0)).toBe(false);
+    expect(isValidBand('wall', 80, 70, 90)).toBe(true);
   });
 
   it('judges a sculpture on its base, letting its top run past the split', () => {
@@ -124,6 +130,21 @@ describe('isValidBand', () => {
   it('falls back to the centre-only rule when no height is supplied', () => {
     expect(isValidBand('sculpture', 70, 70)).toBe(true);
     expect(isValidBand('sculpture', 69.9, 70)).toBe(false);
+    expect(isValidBand('wall', 69.9, 70)).toBe(true);
+    expect(isValidBand('wall', 70, 70)).toBe(false);
+  });
+
+  // Both types now allow the far edge to overrun the split, so neither may be
+  // judged more permissively than the caller that has no geometry to hand —
+  // that caller is Store.livePlacements, which deletes what it refuses.
+  it('is never more permissive without a height than with one', () => {
+    for (const type of ['wall', 'sculpture'] as const) {
+      for (let y = 0; y <= 100; y += 0.5) {
+        if (isValidBand(type, y, 70)) {
+          expect(isValidBand(type, y, 70, 40), `${type} at y=${y}`).toBe(true);
+        }
+      }
+    }
   });
 });
 
@@ -194,6 +215,7 @@ describe('resolveDrop', () => {
   it('does nothing without a canvas to measure', () => {
     expect(drop(WALL_ART, 800, 300, { canvasEl: null })).toEqual({
       action: 'none',
+      reason: 'no-canvas',
     });
   });
 
@@ -210,8 +232,23 @@ describe('resolveDrop', () => {
     });
   });
 
-  it('refuses wall art dropped below the split', () => {
-    expect(drop(WALL_ART, 800, 800)).toEqual({ action: 'none' });
+  it('refuses wall art hung low enough that its top leaves the wall', () => {
+    // Centre at 90% on a 30%-tall piece: it hangs from 75%, below the split.
+    expect(drop(WALL_ART, 800, 900)).toMatchObject({
+      action: 'none',
+      reason: 'wrong-band',
+      // The trace has to say how far off it was, not just that it was off.
+      measured: { centerYPercent: 90, bandSplit: 70, heightPercent: 30 },
+    });
+  });
+
+  it('still places wall art whose centre dips just below the split', () => {
+    // Centre at 80% — the drop the centre-only rule refused, though the piece
+    // hangs from 65% and most of it is plainly on the wall.
+    expect(drop(WALL_ART, 800, 800)).toMatchObject({
+      action: 'place',
+      placement: { x: 50, y: 80 },
+    });
   });
 
   it('places a tall sculpture whose base reaches the floor band', () => {
@@ -230,7 +267,12 @@ describe('resolveDrop', () => {
   });
 
   it('refuses a short sculpture at that same spot', () => {
-    expect(drop(SHORT_SCULPTURE, 800, 450)).toEqual({ action: 'none' });
+    expect(drop(SHORT_SCULPTURE, 800, 450)).toMatchObject({
+      action: 'none',
+      reason: 'wrong-band',
+      // Base at 50% against a 70% split — the number that explains the refusal.
+      measured: { basePercent: 50, bandSplit: 70 },
+    });
   });
 
   it('still places a sculpture sitting wholly in the floor band', () => {
@@ -246,11 +288,41 @@ describe('resolveDrop', () => {
   it('does not remove a tray piece dragged back to the tray', () => {
     expect(drop(WALL_ART, 800, 1025, { source: 'tray' })).toEqual({
       action: 'none',
+      reason: 'returned-unplaced',
     });
   });
 
   it('ignores a release outside the canvas', () => {
-    expect(drop(WALL_ART, 1700, 300)).toEqual({ action: 'none' });
+    expect(drop(WALL_ART, 1700, 300)).toEqual({
+      action: 'none',
+      reason: 'outside-canvas',
+    });
+  });
+
+  // The pointer is not the piece. A tall sculpture grabbed near its base and
+  // released just under the canvas edge is still standing wholly in frame —
+  // judging the pointer refused that drop, and refused it silently, which is
+  // exactly what "the app dropped my object" looks like from the other side.
+  it('places a piece held below the canvas edge whose artwork is inside it', () => {
+    const { width, height } = grabCentre(TALL_SCULPTURE);
+    const result = resolveDrop({
+      canvasEl: CANVAS,
+      room: ROOM,
+      object: TALL_SCULPTURE,
+      source: 'tray',
+      clientX: 800,
+      clientY: RECT.bottom + 10,
+      width,
+      height,
+      offsetX: width / 2,
+      // Held at its base, so the 600px-tall piece hangs above the pointer and
+      // its centre lands at 71% — in frame, and standing below the split.
+      offsetY: height,
+    });
+    expect(result).toMatchObject({
+      action: 'place',
+      placement: { x: 50, y: 71 },
+    });
   });
 
   it('keeps an edge drop inside the frame', () => {
@@ -271,6 +343,7 @@ describe('resolveTapPlace', () => {
   it('does nothing without a canvas to measure', () => {
     expect(tap(WALL_ART, 800, 300, null as unknown as HTMLElement)).toEqual({
       action: 'none',
+      reason: 'no-canvas',
     });
   });
 
@@ -284,7 +357,10 @@ describe('resolveTapPlace', () => {
   it('resolves a tall sculpture the same way the drop does', () => {
     // The two entry points must not drift: same piece, same spot, same answer.
     expect(tap(TALL_SCULPTURE, 800, 450)).toMatchObject({ action: 'place' });
-    expect(tap(SHORT_SCULPTURE, 800, 450)).toEqual({ action: 'none' });
+    expect(tap(SHORT_SCULPTURE, 800, 450)).toMatchObject({
+      action: 'none',
+      reason: 'wrong-band',
+    });
   });
 
   it('keeps an edge tap inside the frame', () => {

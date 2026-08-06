@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { traceDrag } from '../dev/dragTrace';
 
 /** The minimal pointer information the drag callbacks need. */
 export interface DragPoint {
@@ -8,7 +9,14 @@ export interface DragPoint {
 }
 
 type DragCallbacks = {
-  onDragStart: (p: DragPoint) => void;
+  /**
+   * Return `false` to refuse the gesture — the owner has nothing to drag with,
+   * such as a tray piece with no room canvas registered to size its ghost
+   * against. The hook then unwinds instead of holding a drag no owner backs,
+   * which would otherwise track the pointer with no ghost and resolve to
+   * nothing on release.
+   */
+  onDragStart: (p: DragPoint) => boolean | void;
   onDragMove: (p: DragPoint) => void;
   onDragEnd: (p: DragPoint) => void;
   /**
@@ -119,6 +127,11 @@ export function usePointerDrag({
     origin.current = { x: e.clientX, y: e.clientY };
     isDragging.current = false;
     justDragged.current = false;
+    traceDrag('press', {
+      pointerType: e.pointerType,
+      id: e.pointerId,
+      at: `${Math.round(e.clientX)},${Math.round(e.clientY)}`,
+    });
   }, []);
 
   const onPointerMove = useCallback(
@@ -130,18 +143,32 @@ export function usePointerDrag({
       const target = e.currentTarget as HTMLElement;
 
       if (!isDragging.current) {
-        if (Math.hypot(e.clientX - start.x, e.clientY - start.y) < threshold) {
+        const travel = Math.hypot(e.clientX - start.x, e.clientY - start.y);
+        if (travel < threshold) return;
+        traceDrag('threshold', { travel: Math.round(travel) });
+
+        const started = onDragStart({
+          clientX: start.x,
+          clientY: start.y,
+          currentTarget: target,
+        });
+        if (started === false) {
+          // Unwind rather than carry a drag the owner has no geometry for.
+          // Leaving it armed used to strand the contact: no ghost, no drop, and
+          // nothing to distinguish it from a gesture the app had simply lost.
+          origin.current = null;
+          releaseCapture();
+          traceDrag('start-refused');
           return;
         }
         isDragging.current = true;
         setGestureLocked(true);
-        onDragStart({ clientX: start.x, clientY: start.y, currentTarget: target });
       }
 
       e.preventDefault();
       onDragMove({ clientX: e.clientX, clientY: e.clientY, currentTarget: target });
     },
-    [onDragStart, onDragMove, threshold],
+    [onDragStart, onDragMove, releaseCapture, threshold],
   );
 
   /** A deliberate release: commit whatever the gesture resolved to. */
@@ -151,6 +178,10 @@ export function usePointerDrag({
       releaseCapture();
       origin.current = null;
       setGestureLocked(false);
+      traceDrag('release', {
+        wasDragging: isDragging.current,
+        at: `${Math.round(e.clientX)},${Math.round(e.clientY)}`,
+      });
       if (isDragging.current) {
         isDragging.current = false;
         justDragged.current = true;
@@ -173,6 +204,7 @@ export function usePointerDrag({
     isDragging.current = false;
     justDragged.current = false;
     setGestureLocked(false);
+    traceDrag('cancel', { wasDragging });
     if (wasDragging) onDragCancelRef.current?.();
   }, [releaseCapture]);
 
@@ -184,6 +216,10 @@ export function usePointerDrag({
       // it here would let the trailing synthetic click toggle selection on a
       // piece the user had just dragged.
       if (!origin.current && !isDragging.current && !capture.current) return;
+      // Only reported when the net actually catches something. A normal release
+      // leaves nothing in flight, so this line appearing at all means the
+      // gesture was torn down before its owner could resolve the drop.
+      traceDrag('safety-net', { wasDragging: isDragging.current });
       cancel();
     };
     liveDrags.add(teardown);

@@ -19,13 +19,24 @@
  *     finished on pointerup or pointercancel, and window focus changes are
  *     logged because the store aborts every live drag on blur.
  *
- * Everything here is read-only: capture-phase, passive listeners that never
- * call preventDefault or stopPropagation, plus a HUD that is pointer-events
- * none. It cannot alter the behaviour it is measuring — which also means it
- * cannot see inside the hook, so treat it as narrowing the field, not proof.
+ * The window listeners here are read-only: capture-phase, passive, and they
+ * never call preventDefault or stopPropagation, plus a HUD that is
+ * pointer-events none. They cannot alter the behaviour they measure — but they
+ * also cannot see inside the gesture, which is why they are now paired with the
+ * drag trace (src/dev/dragTrace.ts). The app reports its own stages to that
+ * channel and this file renders them interleaved with the raw pointer events,
+ * so a drop that does nothing says which rule refused it rather than leaving it
+ * to be inferred.
  *
- * Delete this file and the guarded import in `main.tsx` once the cause is known.
+ * Read the two together: a `drop action=none reason=…` line is the app
+ * declining the drop on purpose, whereas a `safety-net` or `CANCEL` line with
+ * no `drop` after it is the gesture being taken away before it could resolve.
+ *
+ * Delete this file, src/dev/dragTrace.ts, its call sites and the guarded import
+ * in `main.tsx` once the cause is known.
  */
+
+import { setDragTraceSink, type DragTraceEvent } from './dragTrace';
 
 interface GestureRecord {
   n: number;
@@ -35,6 +46,10 @@ interface GestureRecord {
   button: number;
   at: string;
   hit: string;
+  /** The topmost few elements at the press point, outermost of the stack first. */
+  stack: string;
+  /** How many layers down the nearest draggable was; -1 if there was none. */
+  buriedAt: number;
   moves: number;
   firstMoveMs: number | null;
   travelPx: number;
@@ -44,7 +59,7 @@ interface GestureRecord {
   endMs: number | null;
 }
 
-const MAX_LINES = 14;
+const MAX_LINES = 22;
 
 /** A short, recognisable name for whatever was under the pointer. */
 function describe(el: Element | null): string {
@@ -73,7 +88,15 @@ export function startDragDiagnostics() {
     'position:fixed',
     'top:0',
     'left:0',
-    'z-index:2147483647',
+    // Under the artwork on purpose. The drag ghost and the refusal notice are
+    // both z-50, so a piece in flight and the reason a drop was refused always
+    // read over the top of this rather than being hidden behind it.
+    //
+    // The HUD cannot swallow a press at any depth: `pointer-events:none` takes
+    // it out of hit-testing entirely, so `document.elementFromPoint` — which is
+    // what `hit=` below reports — looks straight through it. If `hit=` ever
+    // names this element, that is a bug in this file, not the app.
+    'z-index:40',
     'max-width:60vw',
     'padding:6px 8px',
     'font:11px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace',
@@ -93,12 +116,45 @@ export function startDragDiagnostics() {
 
   const ms = (t: number) => Math.round(t);
 
+  // -- what the app itself says is happening --------------------------------
+
+  /** Percentages carry a long tail that makes the HUD unreadable. */
+  const fmt = (v: unknown) =>
+    typeof v === 'number' && !Number.isInteger(v) ? v.toFixed(1) : String(v);
+
+  const trace: DragTraceEvent[] = [];
+  /**
+   * Whether the app's own hook saw the press that is currently in flight.
+   *
+   * This is the whole point of pairing the two channels. A press the hook never
+   * receives produces a window `down` line and then silence — no `press`, no
+   * `start`, no `drop` — which is exactly what "the first touch does nothing"
+   * looks like, and it cannot be diagnosed from either channel alone.
+   */
+  let pressReachedApp = false;
+
+  setDragTraceSink((event) => {
+    if (event.phase === 'press') pressReachedApp = true;
+    trace.push(event);
+    const detail = Object.entries(event.detail ?? {})
+      .map(([k, v]) => `${k}=${fmt(v)}`)
+      .join(' ');
+    // Indented so the app's own stages read as belonging to the pointer event
+    // above them rather than as separate gestures.
+    say(`    ${event.phase}${detail ? ' ' + detail : ''}`);
+  });
+
   // -- the gesture itself ---------------------------------------------------
 
   window.addEventListener(
     'pointerdown',
     (e: PointerEvent) => {
       count += 1;
+      // The whole stack at the press point, topmost first, so a draggable that
+      // is present but buried can be named along with whatever is sitting on it.
+      const stack = document.elementsFromPoint(e.clientX, e.clientY);
+      const buriedAt = stack.findIndex((el) => el.closest('[data-draggable]'));
+
       current = {
         n: count,
         t0: e.timeStamp,
@@ -106,7 +162,9 @@ export function startDragDiagnostics() {
         pointerId: e.pointerId,
         button: e.button,
         at: `${Math.round(e.clientX)},${Math.round(e.clientY)}`,
-        hit: describe(document.elementFromPoint(e.clientX, e.clientY)),
+        hit: describe(stack[0] ?? null),
+        stack: stack.slice(0, 4).map(describe).join(' > '),
+        buriedAt,
         moves: 0,
         firstMoveMs: null,
         travelPx: 0,
@@ -120,6 +178,29 @@ export function startDragDiagnostics() {
         `#${count} down ${e.pointerType} id=${e.pointerId} btn=${e.button} @${current.at}\n` +
           `    hit=${current.hit}`,
       );
+
+      // A press that lands on top of a draggable rather than on it is the
+      // classic "does nothing once, then works forever" cause: an overlay that
+      // dismisses itself on its own click swallows exactly one interaction.
+      if (buriedAt > 0) {
+        say(
+          `#${count} !! draggable is ${buriedAt} layer(s) down, covered by\n` +
+            `    ${describe(stack[0] ?? null)}\n    stack=${current.stack}`,
+        );
+      }
+
+      // React's delegated handler runs after this capture-phase listener but
+      // within the same task, so a macrotask later is enough to know whether
+      // the hook ever saw the press.
+      pressReachedApp = false;
+      const pressed = current;
+      setTimeout(() => {
+        if (pressReachedApp || pressed.buriedAt === -1) return;
+        say(
+          `#${pressed.n} !! press never reached the drag hook\n` +
+            `    stack=${pressed.stack}`,
+        );
+      }, 0);
     },
     { capture: true, passive: true },
   );
@@ -202,6 +283,9 @@ export function startDragDiagnostics() {
     // the diagnostic is still useful without it.
   }
 
-  (window as unknown as { __dragLog: GestureRecord[] }).__dragLog = log;
-  say('drag diagnostics on — window.__dragLog');
+  Object.assign(window as unknown as Record<string, unknown>, {
+    __dragLog: log,
+    __dragTrace: trace,
+  });
+  say('drag diagnostics on — window.__dragLog / __dragTrace');
 }

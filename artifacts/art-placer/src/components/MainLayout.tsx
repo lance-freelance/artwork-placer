@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { RoomCarousel } from './RoomCarousel';
 import { RoomNavArrows, RoomNavButton } from './RoomNavArrows';
 import { InventoryTray } from './InventoryTray';
@@ -116,6 +116,52 @@ function GlobalDragLayer() {
   );
 }
 
+/**
+ * Why the last drop did nothing.
+ *
+ * A refused drop is otherwise silent: the piece snaps back and nothing
+ * distinguishes a rule from a fault. Rendered at the document level alongside
+ * the ghost, at the point of release, so the explanation appears where the
+ * visitor was already looking rather than in a corner they are not.
+ */
+function DropRefusalNotice() {
+  const { dropRefusal } = useStore();
+
+  return (
+    <AnimatePresence>
+      {dropRefusal && (
+        // Only opacity is animated. Anything transform-based here would be
+        // written inline by framer and clobber the offset the inner pill uses
+        // to sit above the release point.
+        <motion.div
+          key={dropRefusal.key}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          className="fixed z-50 pointer-events-none"
+          style={{
+            // Kept clear of the viewport edges so a drop refused near one does
+            // not push the notice half off screen.
+            left: Math.min(
+              Math.max(dropRefusal.clientX, 120),
+              window.innerWidth - 120,
+            ),
+            top: Math.max(dropRefusal.clientY - 16, 44),
+          }}
+        >
+          <p
+            role="status"
+            className="-translate-x-1/2 -translate-y-full bg-foreground/90 text-background backdrop-blur-sm rounded-full px-3.5 py-1.5 text-[11px] tracking-[0.1em] uppercase whitespace-nowrap shadow-lg"
+          >
+            {dropRefusal.message}
+          </p>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 export function MainLayout() {
   const sideControls = useMediaQuery(SIDE_CONTROLS);
   const [topChromeRef, topChromeH] = useMeasuredHeight(44);
@@ -141,6 +187,7 @@ export function MainLayout() {
       }}
     >
       <GlobalDragLayer />
+      <DropRefusalNotice />
 
       {/* ── Top chrome: room pill + logo. Height is measured, not assumed. ── */}
       <div ref={topChromeRef} className="w-full flex justify-center shrink-0">

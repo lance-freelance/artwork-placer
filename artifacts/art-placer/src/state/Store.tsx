@@ -5,7 +5,12 @@ import {
   useListRooms,
   useReplacePlacements,
 } from '@workspace/api-client-react';
-import { heightPercentOf, isValidBand } from '@/lib/placement';
+import {
+  heightPercentOf,
+  isValidBand,
+  refusalMessage,
+  type DropRejection,
+} from '@/lib/placement';
 import { abortActivePointerDrags } from '../hooks/usePointerDrag';
 import { artImageUrl } from '../types';
 import type { ArtObject, Placement, Room } from '../types';
@@ -19,6 +24,21 @@ interface DragState {
   height: number;
   offsetX: number;
   offsetY: number;
+}
+
+/**
+ * A drop the rules refused, on its way to being shown.
+ *
+ * Without this a refusal is invisible — the piece simply snaps back, which is
+ * indistinguishable from the app losing it.
+ */
+export interface DropRefusal {
+  /** Distinguishes consecutive refusals so the notice re-animates each time. */
+  key: number;
+  message: string;
+  /** Where the release happened, so the notice lands where the eye already is. */
+  clientX: number;
+  clientY: number;
 }
 
 /**
@@ -62,7 +82,20 @@ interface StoreContextValue {
   
   dragState: DragState | null;
   setDragState: React.Dispatch<React.SetStateAction<DragState | null>>;
-  
+
+  /** The last refused drop, until it times out. */
+  dropRefusal: DropRefusal | null;
+  /**
+   * Report a drop the rules turned down. Silently ignores the refusals that
+   * are not worth telling anyone about — see `refusalMessage`.
+   */
+  noteRefusal: (input: {
+    reason: DropRejection;
+    type: 'wall' | 'sculpture';
+    clientX: number;
+    clientY: number;
+  }) => void;
+
   roomWidth: number;
   setRoomWidth: (w: number) => void;
 
@@ -85,6 +118,9 @@ const SAVE_DEBOUNCE_MS = 400;
  * session, bounded so a long one cannot grow the stack without limit.
  */
 const MAX_UNDO_STEPS = 50;
+
+/** How long a refusal notice stays on screen. */
+const REFUSAL_NOTICE_MS = 2200;
 
 export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   const roomsQuery = useListRooms();
@@ -111,6 +147,45 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   const [dragState, setDragState] = useState<DragState | null>(null);
   const [roomWidth, setRoomWidth] = useState(1000);
   const canvasElRef = useRef<HTMLDivElement | null>(null);
+
+  const [dropRefusal, setDropRefusal] = useState<DropRefusal | null>(null);
+  const refusalCount = useRef(0);
+  const refusalTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const noteRefusal = useCallback(
+    (input: {
+      reason: DropRejection;
+      type: 'wall' | 'sculpture';
+      clientX: number;
+      clientY: number;
+    }) => {
+      const message = refusalMessage(input.reason, input.type);
+      if (!message) return;
+      refusalCount.current += 1;
+      setDropRefusal({
+        key: refusalCount.current,
+        message,
+        clientX: input.clientX,
+        clientY: input.clientY,
+      });
+      // Restarted rather than stacked, so a run of refused drops shows the
+      // latest reason for its full time instead of the first one's timer
+      // clearing the last one early.
+      if (refusalTimer.current) clearTimeout(refusalTimer.current);
+      refusalTimer.current = setTimeout(
+        () => setDropRefusal(null),
+        REFUSAL_NOTICE_MS,
+      );
+    },
+    [],
+  );
+
+  useEffect(
+    () => () => {
+      if (refusalTimer.current) clearTimeout(refusalTimer.current);
+    },
+    [],
+  );
 
   // The saved placements are read once, then this component owns them: it has
   // undo and reset, so re-reading the server mid-session would fight the user.
@@ -343,6 +418,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     undo, resetRoom, resetAll,
     selectedObjectId, setSelectedObjectId,
     dragState, setDragState,
+    dropRefusal, noteRefusal,
     roomWidth, setRoomWidth,
     canvasElRef
   };

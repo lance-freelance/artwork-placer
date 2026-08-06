@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { resolveDrop, resolveTapPlace, type DragGeometry } from '@/lib/placement';
 import { aspectRatioOf, scaleFor } from '@/lib/sizing';
 import { artImageUrl, type Placement } from '../types';
+import { traceDrag } from '../dev/dragTrace';
 
 /**
  * A single object placed inside a room. Dragging it repositions it freeform
@@ -24,6 +25,7 @@ export function ArtObject({ placement }: { placement: Placement }) {
     artObjects,
     selectedObjectId,
     setSelectedObjectId,
+    noteRefusal,
   } = useStore();
   const obj = artObjects.find((o) => o.id === placement.objectId)!;
   const room = rooms.find((r) => r.id === placement.roomId)!;
@@ -44,6 +46,7 @@ export function ArtObject({ placement }: { placement: Placement }) {
         offsetY: p.clientY - rect.top,
       };
       grab.current = geometry;
+      traceDrag('start', { objectId: placement.objectId, source: 'room' });
       setDragState({
         objectId: placement.objectId,
         source: 'room',
@@ -72,6 +75,29 @@ export function ArtObject({ placement }: { placement: Placement }) {
         });
         if (result.action === 'place') placeObject(result.placement);
         if (result.action === 'remove') removePlacement(placement.objectId);
+        if (result.action === 'none') {
+          noteRefusal({
+            reason: result.reason,
+            type: obj.type,
+            clientX: p.clientX,
+            clientY: p.clientY,
+          });
+        }
+        traceDrag('drop', {
+          objectId: placement.objectId,
+          type: obj.type,
+          source: 'room',
+          action: result.action,
+          ...(result.action === 'none' && { reason: result.reason }),
+          ...(result.action === 'none' && result.measured),
+        });
+      } else {
+        traceDrag('drop', {
+          objectId: placement.objectId,
+          source: 'room',
+          action: 'skipped',
+          why: 'no-geometry',
+        });
       }
       setDragState(null);
     },
@@ -88,6 +114,9 @@ export function ArtObject({ placement }: { placement: Placement }) {
   return (
     <div
       {...handlers}
+      // See the note on TrayItem: lets the diagnostics report a press that was
+      // intercepted before it reached this piece.
+      data-draggable="room"
       // z-20 puts the piece above PlacementBand's z-10 overlay. That overlay
       // turns pointer-events-auto whenever a tray item is selected, and while
       // it sat on top it swallowed every press on an already-placed piece —

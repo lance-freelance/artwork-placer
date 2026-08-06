@@ -49,7 +49,7 @@ vi.mock('@workspace/api-client-react', () => ({
 // ---------------------------------------------------------------------------
 
 interface DragHarnessProps {
-  onDragStart?: () => void;
+  onDragStart?: () => boolean | void;
   onDragMove?: () => void;
   onDragEnd?: () => void;
   onDragCancel?: () => void;
@@ -151,6 +151,45 @@ describe('usePointerDrag — drag lifecycle', () => {
     });
 
     expect(onDragEnd).toHaveBeenCalledTimes(1);
+  });
+
+  // An owner with nothing to drag with — a tray piece whose room canvas has not
+  // registered yet — refuses the gesture. The hook used to have already
+  // committed to the drag by then, so it went on tracking a piece that had no
+  // ghost and could never resolve: the contact stayed armed until release and
+  // then did nothing, which is indistinguishable from a dropped object.
+  it('a refused drag start leaves the hook idle and never ends a drag', () => {
+    const onDragStart = vi.fn(() => false);
+    const onDragMove = vi.fn();
+    const onDragEnd = vi.fn();
+    const onDragCancel = vi.fn();
+
+    render(
+      <DragHarness
+        onDragStart={onDragStart}
+        onDragMove={onDragMove}
+        onDragEnd={onDragEnd}
+        onDragCancel={onDragCancel}
+      />,
+    );
+    const el = screen.getByTestId('target');
+
+    pointerDown(el);
+    pointerMove(el);
+
+    expect(onDragStart).toHaveBeenCalledTimes(1);
+    // Refused, so nothing downstream of the start may run.
+    expect(onDragMove).not.toHaveBeenCalled();
+
+    // Further movement must not retry the start on every event.
+    pointerMove(el, 200, 200);
+    expect(onDragStart).toHaveBeenCalledTimes(1);
+
+    // And the release resolves nothing rather than dropping with no geometry.
+    pointerUp(el);
+    expect(onDragEnd).not.toHaveBeenCalled();
+    expect(onDragCancel).not.toHaveBeenCalled();
+    expect(el.dataset.dragging).toBe('false');
   });
 
   it('pointercancel mid-drag calls onDragCancel, never onDragEnd', () => {

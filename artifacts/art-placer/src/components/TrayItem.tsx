@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { resolveDrop, type DragGeometry } from '@/lib/placement';
 import { aspectRatioOf, scaleFor } from '@/lib/sizing';
 import { artImageUrl } from '../types';
+import { traceDrag } from '../dev/dragTrace';
 
 /**
  * A single draggable thumbnail in the inventory tray. Pull it out to place it,
@@ -22,6 +23,7 @@ export function TrayItem({ objectId }: { objectId: string }) {
     activeRoomId,
     rooms,
     artObjects,
+    noteRefusal,
   } = useStore();
   const obj = artObjects.find((o) => o.id === objectId)!;
   const activeRoom = rooms.find((r) => r.id === activeRoomId);
@@ -37,16 +39,24 @@ export function TrayItem({ objectId }: { objectId: string }) {
     // by the chevron buttons in InventoryTray.
     onDragStart: (p) => {
       setSelectedObjectId(null);
-      // No room, no geometry to size the ghost against. Leaving `grab` null
-      // also makes the matching onDragEnd a no-op, so the gesture is inert
-      // rather than half-live.
-      if (!activeRoom) return;
+      // No room, no geometry to size the ghost against — refuse the gesture so
+      // the hook unwinds instead of tracking a drag that can never resolve.
+      if (!activeRoom) {
+        traceDrag('start-refused', { objectId, why: 'no-active-room' });
+        return false;
+      }
       // Measure the canvas live rather than trusting the store's roomWidth:
       // a first drag fired before RoomCanvas has reported its width would
       // otherwise size the ghost off the 1000px default, and with no canvas
       // registered at all the gesture must stay inert.
       const canvasWidth = canvasElRef.current?.getBoundingClientRect().width;
-      if (!canvasWidth) return;
+      if (!canvasWidth) {
+        traceDrag('start-refused', {
+          objectId,
+          why: canvasElRef.current ? 'canvas-zero-width' : 'no-canvas-registered',
+        });
+        return false;
+      }
       const width = canvasWidth * scaleFor(obj, activeRoom);
       const height = width / aspectRatioOf(obj);
       // Held in a ref rather than read back from dragState: a quick flick can
@@ -58,6 +68,7 @@ export function TrayItem({ objectId }: { objectId: string }) {
         offsetY: height / 2,
       };
       grab.current = geometry;
+      traceDrag('start', { objectId, source: 'tray', canvasWidth });
       setDragState({
         objectId,
         source: 'tray',
@@ -65,6 +76,7 @@ export function TrayItem({ objectId }: { objectId: string }) {
         clientY: p.clientY,
         ...geometry,
       });
+      return true;
     },
     onDragMove: (p) => {
       setDragState((prev) =>
@@ -85,26 +97,29 @@ export function TrayItem({ objectId }: { objectId: string }) {
           ...geometry,
         });
         if (result.action === 'place') placeObject(result.placement);
-        // Temporary: drop-resolution instrumentation for the silent-drop bug.
-        // Only ever active alongside src/dev/dragDiagnostics.ts (?debugDrag=1);
-        // remove with it once the cause is pinned down.
-        (window as unknown as { __dragLog?: unknown }).__dragLog &&
-          console.log('[drag] resolveDrop', {
-            action: result.action,
-            room: activeRoom.id,
-            bandSplit: activeRoom.bandSplit,
+        if (result.action === 'none') {
+          noteRefusal({
+            reason: result.reason,
+            type: obj.type,
             clientX: p.clientX,
             clientY: p.clientY,
-            geometry,
-            rect: canvasElRef.current?.getBoundingClientRect().toJSON(),
-            placement: result.action === 'place' ? result.placement : null,
           });
+        }
+        traceDrag('drop', {
+          objectId,
+          type: obj.type,
+          source: 'tray',
+          action: result.action,
+          ...(result.action === 'none' && { reason: result.reason }),
+          ...(result.action === 'none' && result.measured),
+        });
       } else {
-        (window as unknown as { __dragLog?: unknown }).__dragLog &&
-          console.log('[drag] drop skipped', {
-            hasGeometry: !!geometry,
-            activeRoomId,
-          });
+        traceDrag('drop', {
+          objectId,
+          source: 'tray',
+          action: 'skipped',
+          why: geometry ? 'no-active-room' : 'no-geometry',
+        });
       }
       setDragState(null);
     },
@@ -121,6 +136,11 @@ export function TrayItem({ objectId }: { objectId: string }) {
   return (
     <button
       {...handlers}
+      // Read by the drag diagnostics to tell "the press landed on this piece
+      // and the app ignored it" apart from "something invisible was on top of
+      // this piece and the press never got here". Those look identical from the
+      // outside and have completely different causes.
+      data-draggable="tray"
       onClick={() => {
         // A drag that ended on this element must not also toggle selection.
         if (dragging()) return;
