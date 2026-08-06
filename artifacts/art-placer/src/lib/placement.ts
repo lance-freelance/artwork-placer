@@ -1,5 +1,5 @@
 import type { ArtObject as ArtObjectData, Placement, Room } from '../types';
-import { scaleFor } from './sizing';
+import { aspectRatioOf, scaleFor } from './sizing';
 
 /**
  * Shared placement maths. Kept separate from the components so the entry
@@ -26,17 +26,50 @@ export function clampToCanvas(x: number, y: number) {
 }
 
 /**
- * The whole validity rule: one comparison of the object's vertical centre
- * against the room's band split. Wall art above it, sculptures below it.
+ * The whole validity rule: one comparison against the room's band split. Wall
+ * art above it, sculptures below it.
+ *
+ * The two are judged on different points, because they meet the room in
+ * different ways. Wall art hangs, so its centre is what has to be on the wall.
+ * A sculpture *stands* on something, so what has to be inside the lower band is
+ * its base — a tall piece resting properly on the floor routinely has its
+ * centre up in the wall band, and judging it on the centre rejected the drop
+ * silently: the ghost tracked the pointer, the piece snapped back on release.
+ * The top is free to run past the split, which is what a tall sculpture in a
+ * real room does.
+ *
+ * `heightPercent` is the piece's rendered height as a percentage of the canvas
+ * box, and defaults to 0 — exactly the old centre-only behaviour — so a caller
+ * with no geometry to hand is never more permissive than one that has it.
  */
 export function isValidBand(
   type: 'wall' | 'sculpture',
   centerYPercent: number,
   bandSplit: number,
+  heightPercent = 0,
 ) {
   return type === 'wall'
     ? centerYPercent < bandSplit
-    : centerYPercent >= bandSplit;
+    : centerYPercent + heightPercent / 2 >= bandSplit;
+}
+
+/** The canvas box is locked to 16:10 by the layout. */
+const CANVAS_ASPECT = 16 / 10;
+
+/**
+ * A piece's rendered height as a percentage of the canvas box.
+ *
+ * Derived from the catalog rather than measured, so the store's reconciliation
+ * pass — which re-checks saved placements with no canvas in reach — judges a
+ * sculpture by the same base the drop did. Callers holding a real canvas rect
+ * pass its aspect ratio and get the exact figure.
+ */
+export function heightPercentOf(
+  object: Pick<ArtObjectData, 'realWidthInches' | 'realHeightInches'>,
+  room: Pick<Room, 'wallWidthFeet'>,
+  canvasAspect: number = CANVAS_ASPECT,
+): number {
+  return scaleFor(object, room) * 100 * (canvasAspect / aspectRatioOf(object));
 }
 
 /** How far below the canvas a piece must be released to return to the tray. */
@@ -105,7 +138,14 @@ export function resolveDrop({
   const pctCenterX = ((centerX - rect.left) / rect.width) * 100;
   const pctCenterY = ((centerY - rect.top) / rect.height) * 100;
 
-  if (!isValidBand(object.type, pctCenterY, room.bandSplit)) {
+  if (
+    !isValidBand(
+      object.type,
+      pctCenterY,
+      room.bandSplit,
+      (height / rect.height) * 100,
+    )
+  ) {
     return { action: 'none' };
   }
 
@@ -153,7 +193,10 @@ export function resolveTapPlace({
   const pctX = ((clientX - rect.left) / rect.width) * 100;
   const pctY = ((clientY - rect.top) / rect.height) * 100;
 
-  if (!isValidBand(object.type, pctY, room.bandSplit)) return { action: 'none' };
+  const heightPercent = heightPercentOf(object, room, rect.width / rect.height);
+  if (!isValidBand(object.type, pctY, room.bandSplit, heightPercent)) {
+    return { action: 'none' };
+  }
 
   const { x, y } = clampToCanvas(pctX, pctY);
   return {

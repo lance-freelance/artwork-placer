@@ -31,7 +31,12 @@ export function PlacementBand({ room, canvasRef }: { room: Room, canvasRef: Reac
     const objectCenterY = dragState.clientY - dragState.offsetY + dragState.height / 2;
     
     const pctY = ((objectCenterY - rect.top) / rect.height) * 100;
-    const isOverValid = isValidBand(activeObject.type, pctY, room.bandSplit);
+    const isOverValid = isValidBand(
+      activeObject.type,
+      pctY,
+      room.bandSplit,
+      (dragState.height / rect.height) * 100,
+    );
     
     if (isOverValid) {
       setCrosshairPos({ x: objectCenterX - rect.left, y: objectCenterY - rect.top });

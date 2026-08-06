@@ -5,7 +5,7 @@ import {
   useListRooms,
   useReplacePlacements,
 } from '@workspace/api-client-react';
-import { isValidBand } from '@/lib/placement';
+import { heightPercentOf, isValidBand } from '@/lib/placement';
 import { abortActivePointerDrags } from '../hooks/usePointerDrag';
 import type { ArtObject, Placement, Room } from '../types';
 
@@ -180,7 +180,12 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
         const object = artObjects.find((o) => o.id === p.objectId);
         if (!room || !object) return false;
         // Its band may have moved out from under it.
-        return isValidBand(object.type, p.y, room.bandSplit);
+        return isValidBand(
+          object.type,
+          p.y,
+          room.bandSplit,
+          heightPercentOf(object, room),
+        );
       });
     },
     [rooms, artObjects],
