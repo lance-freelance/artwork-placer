@@ -44,7 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ImageOff, Loader2, Upload, Wand2 } from 'lucide-react';
+import { ImageOff, Loader2, Trash2, Upload, Wand2 } from 'lucide-react';
 import { artImageUrl } from '@/types';
 import { aspectRatioOf } from '@/lib/sizing';
 import { Switch } from '@/components/ui/switch';
@@ -284,9 +284,25 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
 
   const artImages = media?.art ?? [];
   /** Thumbnails are derived, so they are never offered as the artwork itself. */
-  const selectableArtImages = artImages.filter((name) => !isThumbnail(name));
+  // Keep the just-uploaded/current image in the list even while the media
+  // query is refreshing. This also makes an existing catalog image selectable
+  // if it was removed from the media listing but is still attached to a piece.
   const fullImageFilename = form.watch('fullImageFilename');
   const thumbnailFilename = form.watch('thumbnailFilename');
+  const selectableArtImages = Array.from(
+    new Set([
+      ...artImages.filter((name) => !isThumbnail(name)),
+      ...(fullImageFilename ? [fullImageFilename] : []),
+    ]),
+  );
+
+  const removeImageSelection = () => {
+    imageOpRef.current += 1;
+    setImageError(null);
+    setBrokenPreviews(new Set());
+    setImageFilenames('', '');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   // Shape is read off the entered real dimensions rather than typed in, so it
   // stays a display value that can never drift from width and height.
@@ -418,7 +434,11 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
                 {isProcessingImage
                   ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   : <Upload className="w-4 h-4 mr-2" />}
-                {isProcessingImage ? 'Processing…' : 'Upload Image'}
+                {isProcessingImage
+                  ? 'Processing…'
+                  : fullImageFilename
+                    ? 'Replace Image'
+                    : 'Upload Image'}
               </Button>
             </div>
 
@@ -481,6 +501,25 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
                     </figcaption>
                   </figure>
                 )}
+              </div>
+            )}
+
+            {(fullImageFilename || thumbnailFilename) && !isProcessingImage && (
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <p className="text-xs text-muted-foreground">
+                  This image is attached to this art piece.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 text-destructive"
+                  data-testid="button-remove-art-image"
+                  onClick={removeImageSelection}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Remove Image
+                </Button>
               </div>
             )}
 
