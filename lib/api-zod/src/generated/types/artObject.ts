@@ -31,4 +31,9 @@ export interface ArtObject {
   resizeRangePercent: number;
   /** Whether this art object is available in the public placement experience. */
   isVisible?: boolean;
+  /**
+     * Monotonically incrementing integer bumped whenever the image file is rewritten in place. Appended as a cache-busting query parameter so browsers that cached a previous version of the image fetch the updated file without a hard refresh.
+     * @minimum 1
+     */
+  imageVersion?: number;
 }

@@ -100,13 +100,13 @@ function GlobalDragLayer() {
       */}
       <div className="relative w-full h-full drop-shadow-[0_22px_28px_rgba(50,40,30,0.32)]">
         <img
-          src={artImageUrl(obj.thumbnailFilename)}
+          src={artImageUrl(obj.thumbnailFilename, obj.imageVersion)}
           alt=""
           draggable={false}
           className="absolute inset-0 w-full h-full object-contain"
         />
         <img
-          src={artImageUrl(obj.fullImageFilename)}
+          src={artImageUrl(obj.fullImageFilename, obj.imageVersion)}
           alt=""
           draggable={false}
           className="relative w-full h-full object-contain"

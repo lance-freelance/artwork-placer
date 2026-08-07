@@ -158,7 +158,7 @@ export function ArtObject({ placement }: { placement: Placement }) {
       }}
     >
       <img
-        src={artImageUrl(obj.fullImageFilename)}
+        src={artImageUrl(obj.fullImageFilename, obj.imageVersion)}
         alt={obj.name}
         draggable={false}
         className="w-full h-full object-contain pointer-events-none drop-shadow-[0_6px_10px_rgba(60,50,40,0.22)] group-hover:drop-shadow-[0_12px_18px_rgba(60,50,40,0.28)] transition-[filter] duration-300"

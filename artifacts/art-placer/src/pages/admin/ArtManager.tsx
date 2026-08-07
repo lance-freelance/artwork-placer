@@ -86,7 +86,7 @@ export function ArtManager() {
                 >
                   <div className="w-24 h-full bg-muted/50 border-r border-border flex items-center justify-center p-2 relative shrink-0">
                     <img 
-                      src={artImageUrl(item.thumbnailFilename)} 
+                      src={artImageUrl(item.thumbnailFilename, item.imageVersion)} 
                       alt={item.name} 
                       className="max-w-full max-h-full object-contain drop-shadow-md"
                     />

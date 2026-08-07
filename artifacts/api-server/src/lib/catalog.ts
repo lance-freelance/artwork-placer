@@ -83,3 +83,32 @@ export async function seedIfEmpty(): Promise<void> {
     logger.info({ count: seedArt.length }, "Seeded art objects");
   }
 }
+
+/**
+ * One-time migration: assigns imageVersion to every art record that lacks one.
+ *
+ * Records without imageVersion were created before the field existed. Some of
+ * those image files were rewritten in place (transparent-padding trim), so
+ * browsers that cached the old content under the same URL would never see the
+ * fix. Setting imageVersion: 2 on every pre-existing record is intentionally
+ * conservative — it forces a cache miss for all of them, ensuring everyone
+ * sees the corrected images without a hard refresh.
+ *
+ * New records are written with imageVersion: 1 by the POST /art handler, so
+ * they will never enter this path. The write is skipped entirely when every
+ * record already has a version (i.e. after the first run).
+ */
+export async function migrateArtImageVersions(): Promise<void> {
+  const art = await getArt();
+  const needsMigration = art.some((a) => a.imageVersion === undefined);
+  if (!needsMigration) return;
+
+  const migrated = art.map((a) =>
+    a.imageVersion !== undefined ? a : { ...a, imageVersion: 2 },
+  );
+  await setArt(migrated);
+  logger.info(
+    { count: migrated.filter((a) => a.imageVersion === 2).length },
+    "Migrated art records: assigned imageVersion 2",
+  );
+}

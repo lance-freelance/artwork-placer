@@ -160,7 +160,7 @@ export function TrayItem({ objectId }: { objectId: string }) {
       }
     >
       <img
-        src={artImageUrl(obj.thumbnailFilename)}
+        src={artImageUrl(obj.thumbnailFilename, obj.imageVersion)}
         alt=""
         draggable={false}
         className="w-full h-full object-contain pointer-events-none drop-shadow-[0_4px_6px_rgba(60,50,40,0.18)]"

@@ -1,6 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { seedIfEmpty } from "./lib/catalog";
+import { seedIfEmpty, migrateArtImageVersions } from "./lib/catalog";
 
 const rawPort = process.env["PORT"];
 
@@ -22,6 +22,12 @@ try {
   await seedIfEmpty();
 } catch (err) {
   logger.error({ err }, "Could not seed the catalog");
+}
+
+try {
+  await migrateArtImageVersions();
+} catch (err) {
+  logger.error({ err }, "Could not migrate art image versions");
 }
 
 app.listen(port, (err) => {

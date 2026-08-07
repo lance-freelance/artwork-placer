@@ -226,6 +226,7 @@ export const listArtResponseResizeRangePercentMax = 100;
 
 
 
+
 export const ListArtResponseItem = zod.object({
   "id": zod.string(),
   "name": zod.string(),
@@ -235,7 +236,8 @@ export const ListArtResponseItem = zod.object({
   "realWidthInches": zod.number().gt(listArtResponseRealWidthInchesExclusiveMin).describe('True width of the physical piece, in inches, exactly as an art listing would state it. The on-canvas scale is derived from this against each room\'s own back-wall calibration, so it is never stored per room.\n'),
   "realHeightInches": zod.number().gt(listArtResponseRealHeightInchesExclusiveMin).describe('True height of the physical piece, in inches.'),
   "resizeRangePercent": zod.number().min(listArtResponseResizeRangePercentMin).max(listArtResponseResizeRangePercentMax).describe('How far a visitor may size this piece up or down from its true-to-life size, as a percentage. 20 means a range of 80%-120%.\n'),
-  "isVisible": zod.boolean().optional().describe('Whether this art object is available in the public placement experience.')
+  "isVisible": zod.boolean().optional().describe('Whether this art object is available in the public placement experience.'),
+  "imageVersion": zod.number().min(1).optional().describe('Monotonically incrementing integer bumped whenever the image file is rewritten in place. Appended as a cache-busting query parameter so browsers that cached a previous version of the image fetch the updated file without a hard refresh.\n')
 })
 export const ListArtResponse = zod.array(ListArtResponseItem)
 
@@ -275,6 +277,7 @@ export const createArtResponseResizeRangePercentMax = 100;
 
 
 
+
 export const CreateArtResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
@@ -284,7 +287,8 @@ export const CreateArtResponse = zod.object({
   "realWidthInches": zod.number().gt(createArtResponseRealWidthInchesExclusiveMin).describe('True width of the physical piece, in inches, exactly as an art listing would state it. The on-canvas scale is derived from this against each room\'s own back-wall calibration, so it is never stored per room.\n'),
   "realHeightInches": zod.number().gt(createArtResponseRealHeightInchesExclusiveMin).describe('True height of the physical piece, in inches.'),
   "resizeRangePercent": zod.number().min(createArtResponseResizeRangePercentMin).max(createArtResponseResizeRangePercentMax).describe('How far a visitor may size this piece up or down from its true-to-life size, as a percentage. 20 means a range of 80%-120%.\n'),
-  "isVisible": zod.boolean().optional().describe('Whether this art object is available in the public placement experience.')
+  "isVisible": zod.boolean().optional().describe('Whether this art object is available in the public placement experience.'),
+  "imageVersion": zod.number().min(1).optional().describe('Monotonically incrementing integer bumped whenever the image file is rewritten in place. Appended as a cache-busting query parameter so browsers that cached a previous version of the image fetch the updated file without a hard refresh.\n')
 })
 
 
@@ -327,6 +331,7 @@ export const updateArtResponseResizeRangePercentMax = 100;
 
 
 
+
 export const UpdateArtResponse = zod.object({
   "id": zod.string(),
   "name": zod.string(),
@@ -336,7 +341,8 @@ export const UpdateArtResponse = zod.object({
   "realWidthInches": zod.number().gt(updateArtResponseRealWidthInchesExclusiveMin).describe('True width of the physical piece, in inches, exactly as an art listing would state it. The on-canvas scale is derived from this against each room\'s own back-wall calibration, so it is never stored per room.\n'),
   "realHeightInches": zod.number().gt(updateArtResponseRealHeightInchesExclusiveMin).describe('True height of the physical piece, in inches.'),
   "resizeRangePercent": zod.number().min(updateArtResponseResizeRangePercentMin).max(updateArtResponseResizeRangePercentMax).describe('How far a visitor may size this piece up or down from its true-to-life size, as a percentage. 20 means a range of 80%-120%.\n'),
-  "isVisible": zod.boolean().optional().describe('Whether this art object is available in the public placement experience.')
+  "isVisible": zod.boolean().optional().describe('Whether this art object is available in the public placement experience.'),
+  "imageVersion": zod.number().min(1).optional().describe('Monotonically incrementing integer bumped whenever the image file is rewritten in place. Appended as a cache-busting query parameter so browsers that cached a previous version of the image fetch the updated file without a hard refresh.\n')
 })
 
 

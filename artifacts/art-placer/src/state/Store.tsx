@@ -202,7 +202,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     if (!artObjects) return;
     for (const obj of artObjects) {
       const img = new Image();
-      img.src = artImageUrl(obj.fullImageFilename);
+      img.src = artImageUrl(obj.fullImageFilename, obj.imageVersion);
     }
   }, [artObjects]);
 

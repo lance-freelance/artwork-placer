@@ -127,6 +127,7 @@ router.post("/art", async (req, res): Promise<void> => {
       id: makeId(parsed.data.name, art.map((a) => a.id)),
       ...parsed.data,
       isVisible: parsed.data.isVisible ?? true,
+      imageVersion: 1,
     };
     await setArt([...art, created]);
     return created;
@@ -147,7 +148,20 @@ router.patch("/art/:artId", async (req, res): Promise<void> => {
     const existing = art.find((a) => a.id === req.params.artId);
     if (!existing) return null;
 
-    const next: ArtObject = { ...existing, ...parsed.data };
+    // When the filenames change the browser's cached copy is stale; bump the
+    // version so the new URL misses the cache and the fresh file is fetched.
+    const filenamesChanged =
+      (parsed.data.fullImageFilename !== undefined &&
+        parsed.data.fullImageFilename !== existing.fullImageFilename) ||
+      (parsed.data.thumbnailFilename !== undefined &&
+        parsed.data.thumbnailFilename !== existing.thumbnailFilename);
+    const next: ArtObject = {
+      ...existing,
+      ...parsed.data,
+      imageVersion: filenamesChanged
+        ? (existing.imageVersion ?? 1) + 1
+        : existing.imageVersion,
+    };
     await setArt(art.map((a) => (a.id === next.id ? next : a)));
 
     // A piece that changed band can no longer sit where it was placed.

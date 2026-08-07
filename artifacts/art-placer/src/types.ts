@@ -35,8 +35,11 @@ export function assetUrl(path: string): string {
  * Use this for every `<img>` that displays an ArtObject's fullImageFilename
  * or thumbnailFilename. Do NOT use `assetUrl('art/...')` for art images.
  */
-export function artImageUrl(filename: string): string {
-  return `/api/art-image/${encodeURIComponent(filename)}`;
+export function artImageUrl(filename: string, version?: number): string {
+  const path = `/api/art-image/${encodeURIComponent(filename)}`;
+  // Append ?v=N when the record carries a version so browsers that cached a
+  // previous copy of the same filename are forced to re-fetch the new file.
+  return version !== undefined ? `${path}?v=${version}` : path;
 }
 
 /**
