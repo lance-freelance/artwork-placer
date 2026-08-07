@@ -4,10 +4,16 @@ import { TrayItem } from './TrayItem';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// Always on the page so the tray's frame reads consistently, but layered
+// BENEATH the scroll strip (z-0 vs the strip's z-10): a piece passing over an
+// arrow always sits on top and keeps its pointerdown. When its direction
+// cannot scroll, an arrow fades and lets clicks pass through.
 const ARROW =
-  'absolute top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-9 h-9 ' +
-  'rounded-full bg-white/85 backdrop-blur-sm shadow-sm hover:bg-white transition-colors ' +
+  'absolute top-1/2 -translate-y-1/2 z-0 flex items-center justify-center w-9 h-9 ' +
+  'rounded-full bg-white/85 backdrop-blur-sm shadow-sm transition-[opacity,background-color] ' +
   'outline-none focus-visible:ring-2 focus-visible:ring-foreground/50 text-foreground';
+const ARROW_ACTIVE = 'hover:bg-white opacity-100';
+const ARROW_DIMMED = 'opacity-25 cursor-default pointer-events-none';
 
 /**
  * Floating art inventory tray, sized to the room canvas and sitting in the
@@ -55,26 +61,23 @@ export function InventoryTray() {
     // the strip scrolls horizontally and every item is shrink-0, so height
     // stays width-independent and MainLayout's measurement cannot oscillate.
     <div className="relative w-4/5 mx-auto bg-background/85 backdrop-blur-md rounded-2xl shadow-[0_10px_30px_-12px_rgba(74,63,48,0.45)] px-12 py-4 pt-[15px] pb-[15px] mt-[0px] mb-[0px] ml-[0px] mr-[0px]">
-      {/* Mounted only while that direction can actually scroll: a chevron
-          parked permanently at the end of its range reads as broken furniture
-          on a tray short enough not to scroll at all. */}
-      {canScrollLeft && (
-        <button
-          onClick={() => scrollBy(-220)}
-          className={cn(ARROW, 'left-1.5')}
-          aria-label="Scroll left"
-        >
-          <ChevronLeft size={20} strokeWidth={1.5} />
-        </button>
-      )}
+      <button
+        onClick={() => scrollBy(-220)}
+        className={cn(ARROW, 'left-1.5', canScrollLeft ? ARROW_ACTIVE : ARROW_DIMMED)}
+        aria-label="Scroll left"
+        tabIndex={canScrollLeft ? 0 : -1}
+      >
+        <ChevronLeft size={20} strokeWidth={1.5} />
+      </button>
       <div
         ref={scrollRef}
         onScroll={checkScroll}
-        // No scroll-snap: `snap-start` aligns an item's own edge, but the first
-        // item sits inside this scroller's left padding, so `snap-mandatory`
-        // resolved the initial snap a few pixels off zero and lit the left
-        // arrow before the user had scrolled anything.
-        className="flex gap-5 overflow-x-auto hide-scrollbar items-center min-h-[90px] pl-[21px] pr-[21px]"
+        // relative + z-10 keeps the strip (and every piece in it) stacked above
+        // the arrows. No scroll-snap: `snap-start` aligns an item's own edge,
+        // but the first item sits inside this scroller's left padding, so
+        // `snap-mandatory` resolved the initial snap a few pixels off zero and
+        // lit the left arrow before the user had scrolled anything.
+        className="relative z-10 flex gap-5 overflow-x-auto hide-scrollbar items-center min-h-[90px] pl-[21px] pr-[21px]"
       >
         {artObjects.map(obj => (
           <div key={obj.id} className="shrink-0 flex items-center justify-center ml-[9px] mr-[9px]">
@@ -82,15 +85,14 @@ export function InventoryTray() {
           </div>
         ))}
       </div>
-      {canScrollRight && (
-        <button
-          onClick={() => scrollBy(220)}
-          className={cn(ARROW, 'right-1.5')}
-          aria-label="Scroll right"
-        >
-          <ChevronRight size={20} strokeWidth={1.5} />
-        </button>
-      )}
+      <button
+        onClick={() => scrollBy(220)}
+        className={cn(ARROW, 'right-1.5', canScrollRight ? ARROW_ACTIVE : ARROW_DIMMED)}
+        aria-label="Scroll right"
+        tabIndex={canScrollRight ? 0 : -1}
+      >
+        <ChevronRight size={20} strokeWidth={1.5} />
+      </button>
     </div>
   );
 }

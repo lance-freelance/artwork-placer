@@ -37,7 +37,12 @@
       "Bash(perl -0pi -e 's/: centerYPercent \\\\+ heightPercent \\\\/ 2 >= bandSplit;/: centerYPercent >= bandSplit;/' src/lib/placement.ts)",
       "Bash(cp /tmp/placement.bak src/lib/placement.ts)",
       "Bash(rm /tmp/placement.bak)",
-      "Bash(BASE_PATH=/ PORT=5000 pnpm run build)"
+      "Bash(BASE_PATH=/ PORT=5000 pnpm run build)",
+      "Bash(git log *)",
+      "Bash(npm run *)",
+      "Bash(npm test *)",
+      "Bash(PORT=5000 npm run build)",
+      "Bash(PORT=5000 BASE_PATH=/ npm run build)"
     ]
   }
 }
