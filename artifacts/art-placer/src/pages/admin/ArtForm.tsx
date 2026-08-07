@@ -21,6 +21,7 @@ import {
   loadImage,
   readFileAsDataUrl,
   THUMBNAIL_MAX_EDGE,
+  trimTransparentEdges,
   verifyImageAsset,
 } from './imageTools';
 
@@ -205,9 +206,18 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
     setImageError(null);
     setIsProcessingImage(true);
     try {
-      const dataUrl = await readFileAsDataUrl(file);
+      const rawDataUrl = await readFileAsDataUrl(file);
       if (!current()) return;
-      const image = await loadImage(dataUrl);
+      const rawImage = await loadImage(rawDataUrl);
+      if (!current()) return;
+
+      // Transparent padding around the piece would make it render at the
+      // wrong size on the wall, so it is cropped away before anything else
+      // is derived from the image.
+      const { dataUrl, image, trimmedFrom } = await trimTransparentEdges(
+        rawImage,
+        rawDataUrl,
+      );
       if (!current()) return;
 
       const thumbnail = generateThumbnail(image);
@@ -248,7 +258,10 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
       } else {
         toast({
           title: 'Image saved',
-          description: `Thumbnail generated at ${THUMBNAIL_MAX_EDGE}px`,
+          description: trimmedFrom
+            ? `Transparent margins cropped (${trimmedFrom.width}×${trimmedFrom.height} → ` +
+              `${image.naturalWidth}×${image.naturalHeight}). Thumbnail generated at ${THUMBNAIL_MAX_EDGE}px.`
+            : `Thumbnail generated at ${THUMBNAIL_MAX_EDGE}px`,
         });
       }
     } catch (err: any) {

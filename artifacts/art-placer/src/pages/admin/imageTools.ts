@@ -90,6 +90,131 @@ export function cropToAspect(
   };
 }
 
+/**
+ * Alpha below this counts as empty when trimming transparent margins.
+ * Anti-aliased edges and soft shadows sit well above it, so they survive;
+ * near-invisible padding pixels left by export tools do not.
+ */
+export const TRIM_ALPHA_THRESHOLD = 8;
+
+/**
+ * Above this many pixels the trim is skipped rather than attempted: the scan
+ * needs a full RGBA copy in memory, and a compressed file can decode to
+ * hundreds of megabytes. Skipping keeps the upload path exactly what it was
+ * before trimming existed, so a huge image is stored as-is, never rejected.
+ */
+export const TRIM_MAX_PIXELS = 24_000_000;
+
+/** The server rejects any single image above this many bytes. */
+export const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
+
+/** Decoded byte size of a `data:` URL's base64 payload. */
+export function dataUrlBytes(dataUrl: string): number {
+  const comma = dataUrl.indexOf(',');
+  const b64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
+  return Math.floor((b64.length * 3) / 4);
+}
+
+export interface TrimResult {
+  /** The image to use: re-encoded when trimmed, the original when not. */
+  dataUrl: string;
+  image: HTMLImageElement;
+  /** The source shape, present only when a trim actually happened. */
+  trimmedFrom: { width: number; height: number } | null;
+}
+
+/**
+ * Crops away fully transparent margins around an artwork.
+ *
+ * Export tools often leave the piece floating in a large transparent canvas,
+ * and since rendered size comes from the image's aspect ratio against the
+ * entered physical dimensions, that padding makes the art draw at the wrong
+ * size on the wall. Trimming to the opaque bounding box makes the pixels and
+ * the physical dimensions describe the same rectangle.
+ *
+ * An image with no transparent border — including any JPEG — is returned
+ * untouched, byte-for-byte, so nothing is re-encoded without need. A fully
+ * transparent image is also returned untouched rather than cropped to nothing.
+ */
+export async function trimTransparentEdges(
+  image: HTMLImageElement,
+  dataUrl: string,
+  alphaThreshold = TRIM_ALPHA_THRESHOLD,
+): Promise<TrimResult> {
+  const width = image.naturalWidth;
+  const height = image.naturalHeight;
+
+  // Too big to scan safely — store as-is, exactly as before trimming existed.
+  if (width * height > TRIM_MAX_PIXELS) {
+    return { dataUrl, image, trimmedFrom: null };
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) throw new Error('This browser could not open a drawing canvas.');
+  ctx.drawImage(image, 0, 0);
+
+  const { data } = ctx.getImageData(0, 0, width, height);
+
+  let left = width;
+  let right = -1;
+  let top = height;
+  let bottom = -1;
+  for (let y = 0; y < height; y++) {
+    const row = y * width * 4;
+    for (let x = 0; x < width; x++) {
+      if (data[row + x * 4 + 3] > alphaThreshold) {
+        if (x < left) left = x;
+        if (x > right) right = x;
+        if (y < top) top = y;
+        if (y > bottom) bottom = y;
+      }
+    }
+  }
+
+  // Nothing opaque at all, or nothing to cut: hand back the original.
+  const empty = right < 0;
+  const alreadyTight =
+    left === 0 && top === 0 && right === width - 1 && bottom === height - 1;
+  if (empty || alreadyTight) {
+    return { dataUrl, image, trimmedFrom: null };
+  }
+
+  const cropWidth = right - left + 1;
+  const cropHeight = bottom - top + 1;
+  const out = document.createElement('canvas');
+  out.width = cropWidth;
+  out.height = cropHeight;
+  const outCtx = out.getContext('2d');
+  if (!outCtx) throw new Error('This browser could not open a drawing canvas.');
+  outCtx.drawImage(image, left, top, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
+  // PNG keeps the crop lossless and keeps the transparency; the artwork is
+  // stored once, so the size difference against WebP is not worth another
+  // generation of quality loss on the actual pixels. But the server caps an
+  // image at MAX_IMAGE_BYTES, and a canvas PNG can come out bigger than the
+  // compressed original — so fall back to WebP (which also keeps alpha), and
+  // if even that is too large, keep the original untrimmed rather than fail.
+  let trimmedUrl = out.toDataURL('image/png');
+  if (dataUrlBytes(trimmedUrl) > MAX_IMAGE_BYTES) {
+    trimmedUrl = out.toDataURL('image/webp', 0.92);
+  }
+  if (
+    dataUrlBytes(trimmedUrl) > MAX_IMAGE_BYTES ||
+    !trimmedUrl.startsWith('data:image/')
+  ) {
+    return { dataUrl, image, trimmedFrom: null };
+  }
+  const trimmedImage = await loadImage(trimmedUrl);
+  return {
+    dataUrl: trimmedUrl,
+    image: trimmedImage,
+    trimmedFrom: { width, height },
+  };
+}
+
 /** Reads a picked file as a `data:` URL, which is what the API accepts. */
 export function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
