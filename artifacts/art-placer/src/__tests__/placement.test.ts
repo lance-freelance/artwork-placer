@@ -44,7 +44,6 @@ const art = (over: Partial<ArtObject> & Pick<ArtObject, 'id' | 'type'>): ArtObje
   fullImageFilename: 'full.jpg',
   realWidthInches: 48,
   realHeightInches: 36,
-  resizeRangePercent: 20,
   ...over,
 });
 

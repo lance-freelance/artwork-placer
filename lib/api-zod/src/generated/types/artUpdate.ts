@@ -19,11 +19,6 @@ export interface ArtUpdate {
   realWidthInches?: number;
   /** @exclusiveMinimum 0 */
   realHeightInches?: number;
-  /**
-     * @minimum 0
-     * @maximum 100
-     */
-  resizeRangePercent?: number;
   /** Whether this art object is available in the public placement experience. */
   isVisible?: boolean;
 }

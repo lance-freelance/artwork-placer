@@ -67,9 +67,14 @@ tilt the line to borrow the diagonal instead of clamping the span — clamping
 silently reintroduces the mismatch. Re-lay the line on room identity, not on
 image filename: two rooms may share one photograph and have different widths.
 
-## Resize bounds are computed but nothing consumes them
+## Resize bounds were removed — the app has no resize interaction
 
-`resizeRangePercent` is stored per piece and bounds are derived from it, but
-the app has no resize interaction at all — the scale fields it replaced were
-equally unread. Do not treat the unused bounds as a bug or invent a resize UI
-to justify them.
+`resizeRangePercent` and its `scaleBoundsFor` helper were deleted (2026-08-08)
+after confirming nothing consumed them: the app has no resize gesture, and the
+`minScale`/`maxScale` fields they replaced were equally unread. If a resize
+feature is ever built, add the bounds back then; do not reintroduce the field
+speculatively.
+
+Note: `Placement.scale` is the same shape of dead weight. It is still written
+on save to satisfy the stored schema, but rendering derives size from
+`realWidthInches` against `wallWidthFeet` and never reads it back.

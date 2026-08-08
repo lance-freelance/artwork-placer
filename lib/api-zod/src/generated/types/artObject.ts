@@ -23,12 +23,6 @@ export interface ArtObject {
      * @exclusiveMinimum 0
      */
   realHeightInches: number;
-  /**
-     * How far a visitor may size this piece up or down from its true-to-life size, as a percentage. 20 means a range of 80%-120%.
-     * @minimum 0
-     * @maximum 100
-     */
-  resizeRangePercent: number;
   /** Whether this art object is available in the public placement experience. */
   isVisible?: boolean;
   /**

@@ -38,7 +38,6 @@ vi.mock('@workspace/api-client-react', () => ({
         type: 'wall',
         realWidthInches: 48,
         realHeightInches: 32,
-        resizeRangePercent: 20,
         fullImageFilename: 'test.jpg',
         thumbnailFilename: 'test-thumb.jpg',
       },

@@ -27,19 +27,6 @@ export function scaleFor(
   return object.realWidthInches / INCHES_PER_FOOT / room.wallWidthFeet;
 }
 
-/**
- * The range a visitor may size a piece within, centred on its true-to-life
- * size. A `resizeRangePercent` of 20 yields 80%–120% of that size.
- */
-export function scaleBoundsFor(
-  object: Pick<ArtObject, 'realWidthInches' | 'resizeRangePercent'>,
-  room: Pick<Room, 'wallWidthFeet'>,
-): { min: number; base: number; max: number } {
-  const base = scaleFor(object, room);
-  const range = object.resizeRangePercent / 100;
-  return { min: base * (1 - range), base, max: base * (1 + range) };
-}
-
 /** Width over height, derived from the real dimensions rather than stored. */
 export function aspectRatioOf(
   object: Pick<ArtObject, 'realWidthInches' | 'realHeightInches'>,

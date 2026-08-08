@@ -292,13 +292,21 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
 
   /** Picks an image already in the rooms folder, then checks its shape. */
   function handleExistingImageChosen(filename: string) {
+    // Never a real choice — see the same guard in ArtForm. Radix syncs its
+    // hidden <select> to the value before a newly added <option> exists, so
+    // the assignment misses, settles on "", and is echoed back here.
+    if (!filename) return;
     setImageError(null);
     form.setValue('imageFilename', filename, { shouldValidate: true, shouldDirty: true });
     void checkAspect(filename);
   }
 
-  const roomImages = media?.rooms ?? [];
   const imageFilename = form.watch('imageFilename');
+  // The uploaded photograph is kept in the list even while the media query is
+  // refetching, so the picker shows what is attached rather than going blank.
+  const roomImages = Array.from(
+    new Set([...(media?.rooms ?? []), ...(imageFilename ? [imageFilename] : [])]),
+  );
   const referenceLengthFeet = form.watch('referenceLengthFeet');
 
   return (

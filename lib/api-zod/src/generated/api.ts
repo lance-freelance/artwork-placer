@@ -221,9 +221,6 @@ export const listArtResponseRealWidthInchesExclusiveMin = 0;
 
 export const listArtResponseRealHeightInchesExclusiveMin = 0;
 
-export const listArtResponseResizeRangePercentMin = 0;
-export const listArtResponseResizeRangePercentMax = 100;
-
 
 
 
@@ -235,7 +232,6 @@ export const ListArtResponseItem = zod.object({
   "fullImageFilename": zod.string(),
   "realWidthInches": zod.number().gt(listArtResponseRealWidthInchesExclusiveMin).describe('True width of the physical piece, in inches, exactly as an art listing would state it. The on-canvas scale is derived from this against each room\'s own back-wall calibration, so it is never stored per room.\n'),
   "realHeightInches": zod.number().gt(listArtResponseRealHeightInchesExclusiveMin).describe('True height of the physical piece, in inches.'),
-  "resizeRangePercent": zod.number().min(listArtResponseResizeRangePercentMin).max(listArtResponseResizeRangePercentMax).describe('How far a visitor may size this piece up or down from its true-to-life size, as a percentage. 20 means a range of 80%-120%.\n'),
   "isVisible": zod.boolean().optional().describe('Whether this art object is available in the public placement experience.'),
   "imageVersion": zod.number().min(1).optional().describe('Monotonically incrementing integer bumped whenever the image file is rewritten in place. Appended as a cache-busting query parameter so browsers that cached a previous version of the image fetch the updated file without a hard refresh.\n')
 })
@@ -252,9 +248,6 @@ export const createArtBodyRealWidthInchesExclusiveMin = 0;
 
 export const createArtBodyRealHeightInchesExclusiveMin = 0;
 
-export const createArtBodyResizeRangePercentMin = 0;
-export const createArtBodyResizeRangePercentMax = 100;
-
 
 
 export const CreateArtBody = zod.object({
@@ -264,16 +257,12 @@ export const CreateArtBody = zod.object({
   "fullImageFilename": zod.string().min(1),
   "realWidthInches": zod.number().gt(createArtBodyRealWidthInchesExclusiveMin),
   "realHeightInches": zod.number().gt(createArtBodyRealHeightInchesExclusiveMin),
-  "resizeRangePercent": zod.number().min(createArtBodyResizeRangePercentMin).max(createArtBodyResizeRangePercentMax),
   "isVisible": zod.boolean().optional().describe('Whether this art object is available in the public placement experience.')
 })
 
 export const createArtResponseRealWidthInchesExclusiveMin = 0;
 
 export const createArtResponseRealHeightInchesExclusiveMin = 0;
-
-export const createArtResponseResizeRangePercentMin = 0;
-export const createArtResponseResizeRangePercentMax = 100;
 
 
 
@@ -286,7 +275,6 @@ export const CreateArtResponse = zod.object({
   "fullImageFilename": zod.string(),
   "realWidthInches": zod.number().gt(createArtResponseRealWidthInchesExclusiveMin).describe('True width of the physical piece, in inches, exactly as an art listing would state it. The on-canvas scale is derived from this against each room\'s own back-wall calibration, so it is never stored per room.\n'),
   "realHeightInches": zod.number().gt(createArtResponseRealHeightInchesExclusiveMin).describe('True height of the physical piece, in inches.'),
-  "resizeRangePercent": zod.number().min(createArtResponseResizeRangePercentMin).max(createArtResponseResizeRangePercentMax).describe('How far a visitor may size this piece up or down from its true-to-life size, as a percentage. 20 means a range of 80%-120%.\n'),
   "isVisible": zod.boolean().optional().describe('Whether this art object is available in the public placement experience.'),
   "imageVersion": zod.number().min(1).optional().describe('Monotonically incrementing integer bumped whenever the image file is rewritten in place. Appended as a cache-busting query parameter so browsers that cached a previous version of the image fetch the updated file without a hard refresh.\n')
 })
@@ -306,9 +294,6 @@ export const updateArtBodyRealWidthInchesExclusiveMin = 0;
 
 export const updateArtBodyRealHeightInchesExclusiveMin = 0;
 
-export const updateArtBodyResizeRangePercentMin = 0;
-export const updateArtBodyResizeRangePercentMax = 100;
-
 
 
 export const UpdateArtBody = zod.object({
@@ -318,16 +303,12 @@ export const UpdateArtBody = zod.object({
   "fullImageFilename": zod.string().min(1).optional(),
   "realWidthInches": zod.number().gt(updateArtBodyRealWidthInchesExclusiveMin).optional(),
   "realHeightInches": zod.number().gt(updateArtBodyRealHeightInchesExclusiveMin).optional(),
-  "resizeRangePercent": zod.number().min(updateArtBodyResizeRangePercentMin).max(updateArtBodyResizeRangePercentMax).optional(),
   "isVisible": zod.boolean().optional().describe('Whether this art object is available in the public placement experience.')
 })
 
 export const updateArtResponseRealWidthInchesExclusiveMin = 0;
 
 export const updateArtResponseRealHeightInchesExclusiveMin = 0;
-
-export const updateArtResponseResizeRangePercentMin = 0;
-export const updateArtResponseResizeRangePercentMax = 100;
 
 
 
@@ -340,7 +321,6 @@ export const UpdateArtResponse = zod.object({
   "fullImageFilename": zod.string(),
   "realWidthInches": zod.number().gt(updateArtResponseRealWidthInchesExclusiveMin).describe('True width of the physical piece, in inches, exactly as an art listing would state it. The on-canvas scale is derived from this against each room\'s own back-wall calibration, so it is never stored per room.\n'),
   "realHeightInches": zod.number().gt(updateArtResponseRealHeightInchesExclusiveMin).describe('True height of the physical piece, in inches.'),
-  "resizeRangePercent": zod.number().min(updateArtResponseResizeRangePercentMin).max(updateArtResponseResizeRangePercentMax).describe('How far a visitor may size this piece up or down from its true-to-life size, as a percentage. 20 means a range of 80%-120%.\n'),
   "isVisible": zod.boolean().optional().describe('Whether this art object is available in the public placement experience.'),
   "imageVersion": zod.number().min(1).optional().describe('Monotonically incrementing integer bumped whenever the image file is rewritten in place. Appended as a cache-busting query parameter so browsers that cached a previous version of the image fetch the updated file without a hard refresh.\n')
 })

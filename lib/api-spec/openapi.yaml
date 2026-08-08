@@ -666,13 +666,6 @@ components:
           description: True height of the physical piece, in inches.
           type: number
           exclusiveMinimum: 0
-        resizeRangePercent:
-          description: >
-            How far a visitor may size this piece up or down from its
-            true-to-life size, as a percentage. 20 means a range of 80%-120%.
-          type: number
-          minimum: 0
-          maximum: 100
         isVisible:
           description: Whether this art object is available in the public placement experience.
           type: boolean
@@ -692,7 +685,6 @@ components:
         - fullImageFilename
         - realWidthInches
         - realHeightInches
-        - resizeRangePercent
 
     ObjectType:
       type: string
@@ -720,10 +712,6 @@ components:
         realHeightInches:
           type: number
           exclusiveMinimum: 0
-        resizeRangePercent:
-          type: number
-          minimum: 0
-          maximum: 100
         isVisible:
           description: Whether this art object is available in the public placement experience.
           type: boolean
@@ -734,7 +722,6 @@ components:
         - fullImageFilename
         - realWidthInches
         - realHeightInches
-        - resizeRangePercent
 
     ArtUpdate:
       type: object
@@ -756,10 +743,6 @@ components:
         realHeightInches:
           type: number
           exclusiveMinimum: 0
-        resizeRangePercent:
-          type: number
-          minimum: 0
-          maximum: 100
         isVisible:
           description: Whether this art object is available in the public placement experience.
           type: boolean

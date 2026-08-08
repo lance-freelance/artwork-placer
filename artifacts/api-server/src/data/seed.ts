@@ -49,7 +49,6 @@ export const seedArt: ArtObject[] = [
     // ~50cm wide framed work
     realWidthInches: 19.7,
     realHeightInches: 30.3,
-    resizeRangePercent: 20,
   },
   {
     id: "art-landscape-meadow",
@@ -60,7 +59,6 @@ export const seedArt: ArtObject[] = [
     // ~70cm wide landscape in a heavy gilt frame
     realWidthInches: 27.6,
     realHeightInches: 22.4,
-    resizeRangePercent: 20,
   },
   {
     id: "art-square-abstract",
@@ -71,7 +69,6 @@ export const seedArt: ArtObject[] = [
     // ~55cm square canvas
     realWidthInches: 21.7,
     realHeightInches: 23.3,
-    resizeRangePercent: 20,
   },
   {
     id: "art-oversized-monochrome",
@@ -82,7 +79,6 @@ export const seedArt: ArtObject[] = [
     // ~85cm wide, ~1.2m tall — the statement piece
     realWidthInches: 33.5,
     realHeightInches: 47.2,
-    resizeRangePercent: 20,
   },
   {
     id: "art-oval-portrait",
@@ -93,7 +89,6 @@ export const seedArt: ArtObject[] = [
     // ~40cm oval portrait
     realWidthInches: 15.7,
     realHeightInches: 20.7,
-    resizeRangePercent: 20,
   },
   {
     id: "art-small-sketch",
@@ -104,7 +99,6 @@ export const seedArt: ArtObject[] = [
     // ~30cm sketch, the smallest piece in the collection
     realWidthInches: 11.8,
     realHeightInches: 19,
-    resizeRangePercent: 20,
   },
   {
     id: "sculpture-stone-form",
@@ -115,7 +109,6 @@ export const seedArt: ArtObject[] = [
     // ~70cm tall stone form on its plinth
     realWidthInches: 14.6,
     realHeightInches: 27.6,
-    resizeRangePercent: 20,
   },
   {
     id: "sculpture-bronze-figure",
@@ -126,6 +119,5 @@ export const seedArt: ArtObject[] = [
     // ~45cm long reclining bronze
     realWidthInches: 17.7,
     realHeightInches: 13.4,
-    resizeRangePercent: 20,
   },
 ];

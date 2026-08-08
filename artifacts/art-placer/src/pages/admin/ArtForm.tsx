@@ -56,7 +56,6 @@ const artSchema = z.object({
   fullImageFilename: z.string().min(1, "Full image is required"),
   realWidthInches: z.coerce.number().positive("Must be > 0"),
   realHeightInches: z.coerce.number().positive("Must be > 0"),
-  resizeRangePercent: z.coerce.number().min(0).max(100),
   isVisible: z.boolean(),
 });
 
@@ -110,7 +109,6 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
       fullImageFilename: art?.fullImageFilename ?? '',
       realWidthInches: art?.realWidthInches ?? 24,
       realHeightInches: art?.realHeightInches ?? 36,
-      resizeRangePercent: art?.resizeRangePercent ?? 20,
       isVisible: art?.isVisible ?? true,
     },
   });
@@ -133,7 +131,6 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
         fullImageFilename: art.fullImageFilename,
         realWidthInches: art.realWidthInches,
         realHeightInches: art.realHeightInches,
-        resizeRangePercent: art.resizeRangePercent,
         isVisible: art.isVisible ?? true,
       });
     } else {
@@ -144,7 +141,6 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
         fullImageFilename: '',
         realWidthInches: 24,
         realHeightInches: 36,
-        resizeRangePercent: 20,
         isVisible: true,
       });
     }
@@ -278,6 +274,15 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
 
   /** Reuses a picture already in the art directory, thumbnail and all. */
   const handleExistingImageChosen = (filename: string) => {
+    // An empty filename is never a choice the admin can make: the list has no
+    // blank entry, and clearing the image is the Remove button's job. It
+    // arrives from the hidden <select> Radix keeps in step with the value —
+    // that sync runs before a newly added <option> has rendered, so assigning
+    // the value finds no match, lands on "", and echoes it back here. A
+    // just-uploaded filename is exactly that case, since it only joins the
+    // list on the same render that selects it. Acting on the echo would undo
+    // the upload the moment it landed.
+    if (!filename) return;
     setImageError(null);
     setImageFilenames(filename, findThumbnailFor(filename, media?.art ?? []));
   };
@@ -568,7 +573,7 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
               <div className="h-px bg-border flex-1 ml-4" />
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
               <FormField
                 control={form.control}
                 name="realWidthInches"
@@ -599,21 +604,6 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="resizeRangePercent"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Resize Range (%)</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="1" {...field} />
-                    </FormControl>
-                    <FormDescription>0 to 100</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               {/* Derived from width and height, so it is shown, never edited.
                   Deliberately not a FormItem/FormLabel: those read form state
                   through context and throw outside a FormField, and this
@@ -638,10 +628,10 @@ export function ArtForm({ art, onSuccess, onCancel }: ArtFormProps) {
                 calibration, so the same artwork appears correctly scaled in
                 every room.
               </p>
-              <ul className="list-disc pl-5 mt-1 space-y-1">
-                <li>A 24" × 36" print reads at its real size relative to the wall it hangs on.</li>
-                <li>Resize Range sets how far a visitor may size it up or down: 20% allows 80%–120% of true size.</li>
-              </ul>
+              <p className="mt-2">
+                A 24" × 36" print reads at its real size relative to the wall it
+                hangs on.
+              </p>
             </div>
           </div>
         </div>

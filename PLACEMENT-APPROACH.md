@@ -274,8 +274,8 @@ slightly wrong" — which a visitor can see, understand, and undo.
 ## 8. Note on the existing documentation
 
 `README.md` and `replit.md` describe the art record as carrying `defaultScale`,
-`minScale`, and `maxScale`. The live contract uses `realWidthInches`,
-`realHeightInches`, and `resizeRangePercent`, and rooms have gained `wallWidthFeet` and
+`minScale`, and `maxScale`. The live contract uses `realWidthInches` and
+`realHeightInches`, and rooms have gained `wallWidthFeet` and
 `referenceLengthFeet`. The scaling model moved from "a fraction of canvas width" to "real
 dimensions against a calibrated wall" — a significant improvement, and the reason scale
 honesty is achievable at all — but the docs never caught up. Worth correcting whichever
