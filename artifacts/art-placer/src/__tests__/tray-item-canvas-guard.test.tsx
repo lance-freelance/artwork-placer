@@ -203,5 +203,13 @@ describe('TrayItem — healthy registered canvas', () => {
     expect(placements[0].y).toBeCloseTo(48, 1);
     // The gesture finished cleanly: ghost cleared after the drop.
     expect(probe.getAttribute('data-drag-active')).toBe('false');
+    // The catalog slot stays visible after placement, so neighboring pieces
+    // do not collapse into the removed thumbnail's footprint.
+    const placeholder = screen.getByTestId('tray-placeholder-art-1');
+    expect(placeholder).toBeInTheDocument();
+    // The carousel wrapper owns the complete slot spacing for both states.
+    // This keeps the placeholder and thumbnail at the same occupied width.
+    expect(placeholder.parentElement).toHaveClass('ml-[23px]', 'mr-[23px]');
+    expect(placeholder).not.toHaveClass('ml-[14px]', 'mr-[14px]');
   });
 });
