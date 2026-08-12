@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { RoomCarousel } from './RoomCarousel';
 import { RoomNavArrows, RoomNavButton } from './RoomNavArrows';
 import { InventoryTray } from './InventoryTray';
-import { Controls } from './Controls';
+import { Controls, FullscreenButton } from './Controls';
 import { RoomTabs } from './RoomTabs';
 import { InstructionOverlay } from './InstructionOverlay';
 import { useStore } from '../state/Store';
@@ -188,6 +188,7 @@ export function MainLayout() {
     >
       <GlobalDragLayer />
       <DropRefusalNotice />
+      <FullscreenButton />
 
       {/* ── Top chrome: room pill + logo. Height is measured, not assumed. ── */}
       <div ref={topChromeRef} className="w-full flex justify-center shrink-0">

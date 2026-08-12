@@ -16,8 +16,6 @@ type Layout = 'vertical' | 'horizontal';
  */
 export function Controls({ layout = 'vertical' }: { layout?: Layout }) {
   const { history, undo, resetRoom, resetAll, activeRoomId } = useStore();
-  const { supported: fullscreenSupported, isFullscreen, toggle: toggleFullscreen } =
-    useFullscreen();
 
   const [resetOpen, setResetOpen] = useState(false);
   const resetRef = useRef<HTMLDivElement>(null);
@@ -169,25 +167,30 @@ export function Controls({ layout = 'vertical' }: { layout?: Layout }) {
         </AnimatePresence>
       </div>
 
-      {fullscreenSupported && (
-        <>
-          {isVertical && <div className="h-3" />}
-          <button
-            type="button"
-            onClick={toggleFullscreen}
-            className={cn(
-              'h-9 w-9 rounded-full flex items-center justify-center',
-              'bg-white/35 text-foreground/55 backdrop-blur-sm',
-              'hover:bg-white/75 hover:text-foreground transition-colors',
-              'outline-none focus-visible:ring-2 focus-visible:ring-foreground/50',
-            )}
-            aria-label={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
-            title={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
-          >
-            {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-          </button>
-        </>
-      )}
     </div>
+  );
+}
+
+/** A deliberately quiet escape hatch for displays that cannot use native fullscreen. */
+export function FullscreenButton() {
+  const { supported, isFullscreen, toggle } = useFullscreen();
+
+  if (!supported) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={toggle}
+      className={cn(
+        'absolute right-3 bottom-3 z-20 h-[18px] w-[18px] rounded-full',
+        'flex items-center justify-center bg-white/20 text-foreground/35',
+        'backdrop-blur-sm transition-colors hover:bg-white/70 hover:text-foreground',
+        'outline-none focus-visible:ring-2 focus-visible:ring-foreground/50',
+      )}
+      aria-label={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
+      title={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
+    >
+      {isFullscreen ? <Minimize2 size={9} /> : <Maximize2 size={9} />}
+    </button>
   );
 }
