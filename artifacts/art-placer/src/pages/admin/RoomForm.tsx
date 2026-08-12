@@ -57,6 +57,7 @@ const roomSchema = z.object({
     .number()
     .positive("Set a reference length for the calibration line"),
   isVisible: z.boolean(),
+  allowArtReuse: z.boolean(),
 });
 
 type RoomFormValues = z.infer<typeof roomSchema>;
@@ -103,6 +104,9 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
       referenceLengthFeet:
         room?.referenceLengthFeet ?? DEFAULT_REFERENCE_LENGTH_FEET,
       isVisible: room?.isVisible ?? true,
+      // Rooms saved before the flag existed have none stored, which means the
+      // original behavior: one placement per piece across the whole session.
+      allowArtReuse: room?.allowArtReuse ?? false,
     },
   });
 
@@ -124,6 +128,7 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
         referenceLengthFeet:
           room.referenceLengthFeet ?? DEFAULT_REFERENCE_LENGTH_FEET,
         isVisible: room.isVisible ?? true,
+        allowArtReuse: room.allowArtReuse ?? false,
       });
       // Say so if an already-saved room's image is off-ratio too.
       void checkAspect(room.imageFilename);
@@ -135,6 +140,7 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
         wallWidthFeet: 13.5,
         referenceLengthFeet: DEFAULT_REFERENCE_LENGTH_FEET,
         isVisible: true,
+        allowArtReuse: false,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -358,6 +364,31 @@ export function RoomForm({ room, onSuccess, onCancel }: RoomFormProps) {
                     checked={field.value}
                     onCheckedChange={field.onChange}
                     aria-label="Show room in placement experience"
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="allowArtReuse"
+            render={({ field }) => (
+              <FormItem className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-4">
+                <div className="space-y-1">
+                  <FormLabel>Art availability</FormLabel>
+                  <FormDescription>
+                    {field.value
+                      ? 'Once per room: a piece hanging in another room can also be placed here (once).'
+                      : 'Once per session: a piece placed anywhere is unavailable everywhere else.'}
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                    aria-label="Allow art to be reused across rooms"
+                    data-testid="switch-allow-art-reuse"
                   />
                 </FormControl>
               </FormItem>

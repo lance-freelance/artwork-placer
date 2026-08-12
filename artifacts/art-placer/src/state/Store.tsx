@@ -70,8 +70,12 @@ interface StoreContextValue {
   history: HistoryEntry[];
   
   placeObject: (p: Placement) => void;
-  updatePlacement: (objectId: string, x: number, y: number) => void;
-  removePlacement: (objectId: string) => void;
+  /**
+   * Both keyed by (objectId, roomId): with per-room reuse enabled the same
+   * piece can hang in several rooms at once, so objectId alone is ambiguous.
+   */
+  updatePlacement: (objectId: string, roomId: string, x: number, y: number) => void;
+  removePlacement: (objectId: string, roomId: string) => void;
   
   undo: () => void;
   resetRoom: (roomId: string) => void;
@@ -263,10 +267,17 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   const livePlacements = useCallback(
     (list: Placement[]) => {
       if (!rooms || !artObjects) return list;
+      // A room holds at most one copy of a piece; anything beyond the first
+      // (objectId, roomId) pair is a corrupted record, and the server refuses
+      // to save a set containing one.
+      const seen = new Set<string>();
       return list.filter((p) => {
         const room = rooms.find((r) => r.id === p.roomId);
         const object = artObjects.find((o) => o.id === p.objectId);
         if (!room || !object) return false;
+        const key = `${p.roomId}\u0000${p.objectId}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
         // Its band may have moved out from under it.
         return isValidBand(
           object.type,
@@ -320,22 +331,30 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   }, [placements]);
 
   const placeObject = useCallback((p: Placement) => {
-    saveHistory([...placements.filter(pl => pl.objectId !== p.objectId), p], p.roomId);
-  }, [placements, saveHistory]);
+    // What an incoming placement displaces depends on the target room's reuse
+    // policy. A reuse room only replaces its own copy of the piece — the same
+    // artwork may hang in other rooms too. The default (no flag, or false)
+    // keeps the original session-wide rule: the piece exists once, anywhere.
+    const targetRoom = rooms?.find((r) => r.id === p.roomId);
+    const displaced = targetRoom?.allowArtReuse
+      ? (pl: Placement) => pl.objectId === p.objectId && pl.roomId === p.roomId
+      : (pl: Placement) => pl.objectId === p.objectId;
+    saveHistory([...placements.filter((pl) => !displaced(pl)), p], p.roomId);
+  }, [placements, rooms, saveHistory]);
 
-  const updatePlacement = useCallback((objectId: string, x: number, y: number) => {
-    const existing = placements.find(p => p.objectId === objectId);
-    if (!existing) return;
+  const updatePlacement = useCallback((objectId: string, roomId: string, x: number, y: number) => {
+    const matches = (p: Placement) => p.objectId === objectId && p.roomId === roomId;
+    if (!placements.some(matches)) return;
     saveHistory(
-      placements.map(p => p.objectId === objectId ? { ...p, x, y } : p),
-      existing.roomId,
+      placements.map(p => matches(p) ? { ...p, x, y } : p),
+      roomId,
     );
   }, [placements, saveHistory]);
 
-  const removePlacement = useCallback((objectId: string) => {
-    const existing = placements.find(p => p.objectId === objectId);
-    if (!existing) return;
-    saveHistory(placements.filter(p => p.objectId !== objectId), existing.roomId);
+  const removePlacement = useCallback((objectId: string, roomId: string) => {
+    const matches = (p: Placement) => p.objectId === objectId && p.roomId === roomId;
+    if (!placements.some(matches)) return;
+    saveHistory(placements.filter(p => !matches(p)), roomId);
   }, [placements, saveHistory]);
 
   // Safety net: if anything steals the pointer mid-drag (the browser cancelling

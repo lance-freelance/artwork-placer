@@ -29,7 +29,12 @@ export function TrayItem({ objectId }: { objectId: string }) {
   const activeRoom = rooms.find((r) => r.id === activeRoomId);
   const grab = useRef<DragGeometry | null>(null);
   const isDragging = dragState?.objectId === objectId;
-  const isPlaced = placements.some((p) => p.objectId === objectId);
+  // Availability depends on the active room's reuse policy: a reuse room only
+  // cares whether the piece already hangs in THIS room; the default treats a
+  // piece placed anywhere as used up for the whole session.
+  const isPlaced = activeRoom?.allowArtReuse
+    ? placements.some((p) => p.objectId === objectId && p.roomId === activeRoomId)
+    : placements.some((p) => p.objectId === objectId);
   const isSelected = selectedObjectId === objectId;
 
   const { dragging, handlers } = usePointerDrag({

@@ -74,7 +74,7 @@ export function ArtObject({ placement }: { placement: Placement }) {
           ...geometry,
         });
         if (result.action === 'place') placeObject(result.placement);
-        if (result.action === 'remove') removePlacement(placement.objectId);
+        if (result.action === 'remove') removePlacement(placement.objectId, placement.roomId);
         if (result.action === 'none') {
           noteRefusal({
             reason: result.reason,
@@ -173,7 +173,7 @@ export function ArtObject({ placement }: { placement: Placement }) {
         onPointerUp={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.stopPropagation();
-          removePlacement(placement.objectId);
+          removePlacement(placement.objectId, placement.roomId);
         }}
         aria-label={`Return ${obj.name} to the tray`}
       >
