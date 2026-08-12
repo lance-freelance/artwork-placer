@@ -46,8 +46,6 @@ vi.mock('@workspace/api-client-react', () => ({
   }),
   // Start with nothing placed so the tray item is visible and any placement
   // observed later must have come from the drag under test.
-  useListPlacements: () => ({ data: [], isError: false }),
-  useReplacePlacements: () => ({ mutateAsync: vi.fn() }),
 }));
 
 import { StoreProvider, useStore } from '../state/Store';

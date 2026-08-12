@@ -1,10 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import {
-  useListArt,
-  useListPlacements,
-  useListRooms,
-  useReplacePlacements,
-} from '@workspace/api-client-react';
+import { useListArt, useListRooms } from '@workspace/api-client-react';
 import {
   heightPercentOf,
   isValidBand,
@@ -110,8 +105,46 @@ interface StoreContextValue {
 
 const StoreContext = createContext<StoreContextValue | null>(null);
 
-/** How long a placement change settles before it is written to the server. */
+/** How long a placement change settles before it is written to storage. */
 const SAVE_DEBOUNCE_MS = 400;
+
+/**
+ * Where this browser's placements live. Versioned so a future change to the
+ * stored shape can move to a new key instead of misreading the old one.
+ */
+const PLACEMENTS_STORAGE_KEY = 'haumiq.placements.v1';
+
+/**
+ * The stored placements, or an empty set when there are none or the entry is
+ * unreadable (corrupt JSON, wrong shape, storage disabled). Anything that is
+ * not an array of objects is treated as absent rather than an error — the
+ * board can always start empty.
+ */
+function readStoredPlacements(): Placement[] {
+  try {
+    const raw = localStorage.getItem(PLACEMENTS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    // Mirrors the API contract this data used to pass through: every field
+    // present, coordinates finite, scale within (0, 1]. Anything else is
+    // discarded rather than trusted to render.
+    return parsed.filter(
+      (p): p is Placement =>
+        !!p &&
+        typeof p === 'object' &&
+        typeof p.roomId === 'string' &&
+        typeof p.objectId === 'string' &&
+        Number.isFinite(p.x) &&
+        Number.isFinite(p.y) &&
+        Number.isFinite(p.scale) &&
+        p.scale > 0 &&
+        p.scale <= 1,
+    );
+  } catch {
+    return [];
+  }
+}
 
 /**
  * How far back undo reaches. Deep enough that nobody hits the end in a normal
@@ -125,8 +158,6 @@ const REFUSAL_NOTICE_MS = 2200;
 export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   const roomsQuery = useListRooms();
   const artQuery = useListArt();
-  const placementsQuery = useListPlacements();
-  const { mutateAsync: savePlacements } = useReplacePlacements();
 
   const rooms = roomsQuery.data;
   const artObjects = artQuery.data;
@@ -188,10 +219,9 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   // The saved placements are read once, then this component owns them: it has
-  // undo and reset, so re-reading the server mid-session would fight the user.
+  // undo and reset, so re-reading storage mid-session would fight the user.
   const hydratedRef = useRef(false);
   const lastSavedRef = useRef<string | null>(null);
-  const saveChainRef = useRef<Promise<unknown>>(Promise.resolve());
   const [saveFailed, setSaveFailed] = useState(false);
 
   // The tray only ever loads thumbnails, but the drag ghost renders the
@@ -206,13 +236,19 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [artObjects]);
 
+  // Placements are per-browser: this board's arrangement is nobody else's
+  // business, so it hydrates from localStorage rather than the server. The
+  // catalog is still awaited first — the stored set can only be validated
+  // against rooms and art that have actually loaded.
   useEffect(() => {
     if (hydratedRef.current) return;
-    if (!rooms || !artObjects || !placementsQuery.data) return;
+    if (!rooms || !artObjects) return;
 
     // Anything pointing at a room or a piece the admin panel has since deleted
-    // can never be rendered, so it is dropped on the way in.
-    const live = placementsQuery.data.filter(
+    // can never be rendered, so it is dropped on the way in. The server used
+    // to enforce this on save; with storage local, this sweep is the only
+    // gate.
+    const live = readStoredPlacements().filter(
       (p) =>
         rooms.some((r) => r.id === p.roomId) &&
         artObjects.some((o) => o.id === p.objectId),
@@ -221,7 +257,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     hydratedRef.current = true;
     lastSavedRef.current = JSON.stringify(live);
     setPlacements(live);
-  }, [rooms, artObjects, placementsQuery.data]);
+  }, [rooms, artObjects]);
 
   useEffect(() => {
     if (!hydratedRef.current) return;
@@ -229,27 +265,22 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     const serialized = JSON.stringify(placements);
     if (serialized === lastSavedRef.current) return;
 
-    const snapshot = placements;
     const timer = setTimeout(() => {
-      // Writes are chained rather than fired in parallel. Each one is the
-      // whole set, so an older request landing after a newer one would quietly
-      // undo it. The saved marker moves only once the write has actually
-      // succeeded, so a failed save is retried by the next change instead of
-      // being remembered as persisted.
-      saveChainRef.current = saveChainRef.current
-        .then(() => savePlacements({ data: snapshot }))
-        .then(() => {
-          lastSavedRef.current = serialized;
-          setSaveFailed(false);
-        })
-        .catch((err: unknown) => {
-          console.error('Could not save placements', err);
-          setSaveFailed(true);
-        });
+      // localStorage writes are synchronous, but they can still fail — quota,
+      // storage disabled in a private window. A failed write is retried by
+      // the next change rather than remembered as persisted.
+      try {
+        localStorage.setItem(PLACEMENTS_STORAGE_KEY, serialized);
+        lastSavedRef.current = serialized;
+        setSaveFailed(false);
+      } catch (err: unknown) {
+        console.error('Could not save placements', err);
+        setSaveFailed(true);
+      }
     }, SAVE_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-  }, [placements, savePlacements]);
+  }, [placements]);
 
   /**
    * The placements in a list that still make sense against the catalog as it
@@ -398,7 +429,7 @@ export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
     saveHistory([], activeRoomId);
   }, [saveHistory, activeRoomId]);
 
-  if (roomsQuery.isError || artQuery.isError || placementsQuery.isError) {
+  if (roomsQuery.isError || artQuery.isError) {
     return <CatalogNotice title="The collection could not be loaded." body="The server is unreachable. Refresh the page to try again." />;
   }
 

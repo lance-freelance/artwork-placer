@@ -37,11 +37,6 @@ vi.mock('@workspace/api-client-react', () => ({
     ],
     isError: false,
   }),
-  useListPlacements: () => ({
-    data: [{ objectId: 'art-1', roomId: 'room-1', x: 50, y: 30, scale: 0.3 }],
-    isError: false,
-  }),
-  useReplacePlacements: () => ({ mutateAsync: vi.fn() }),
 }));
 
 // ---------------------------------------------------------------------------

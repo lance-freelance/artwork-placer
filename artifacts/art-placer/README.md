@@ -22,12 +22,16 @@ workflow must be running too.
 
 ## Content and persistence
 
-Nothing about the collection is hardcoded. Rooms, art objects and placements are stored as
-structured metadata in Replit DB and read over the API at load:
+Nothing about the collection is hardcoded. Rooms and art objects are stored as structured
+metadata in Replit DB and read over the API at load:
 
 - `GET /api/rooms`, `GET /api/art` — the catalog the board renders
-- `GET /api/placements`, `PUT /api/placements` — where every piece sits; the board writes
-  the whole set back, debounced, after each change, so placements survive a refresh
+
+Placements are per-browser: each visitor's arrangement lives in that browser's
+localStorage (written debounced after each change, validated against the catalog on
+load), so concurrent visitors never see or overwrite each other's work. The legacy
+`GET /api/placements` / `PUT /api/placements` endpoints remain on the server but the
+visitor flow no longer calls them.
 - `GET /api/media` — the image filenames actually present on disk
 - `POST /api/media/art` — writes an uploaded artwork and its generated thumbnail
 
