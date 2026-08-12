@@ -576,14 +576,6 @@ components:
         isVisible:
           description: Whether this room is available in the public placement experience.
           type: boolean
-        allowArtReuse:
-          description: >
-            When true, a piece already hanging in another room can also be
-            placed in this one — availability is "once per room" rather than
-            the default "once across the whole session". Absent on rooms saved
-            before this existed, which reads as false: the original global
-            behavior.
-          type: boolean
       required:
         - id
         - name
@@ -619,9 +611,6 @@ components:
         isVisible:
           description: Whether this room is available in the public placement experience.
           type: boolean
-        allowArtReuse:
-          description: Once-per-room availability instead of once-per-session.
-          type: boolean
       required:
         - name
         - imageFilename
@@ -650,9 +639,6 @@ components:
           exclusiveMinimum: 0
         isVisible:
           description: Whether this room is available in the public placement experience.
-          type: boolean
-        allowArtReuse:
-          description: Once-per-room availability instead of once-per-session.
           type: boolean
 
     ArtObject:

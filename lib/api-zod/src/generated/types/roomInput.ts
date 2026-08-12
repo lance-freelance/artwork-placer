@@ -28,6 +28,4 @@ export interface RoomInput {
   referenceLengthFeet: number;
   /** Whether this room is available in the public placement experience. */
   isVisible?: boolean;
-  /** Once-per-room availability instead of once-per-session. */
-  allowArtReuse?: boolean;
 }

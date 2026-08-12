@@ -109,8 +109,7 @@ export const ListRoomsResponseItem = zod.object({
   "bandSplit": zod.number().min(1).max(listRoomsResponseBandSplitMax).describe('Percentage of canvas height. Wall art may only be placed above it, sculptures only below it.\n'),
   "wallWidthFeet": zod.number().gt(listRoomsResponseWallWidthFeetExclusiveMin).describe('Real-world width, in decimal feet, of the BACK WALL spanned by the full canvas width — measured corner to corner exactly where that wall fills the frame. Deliberately not the room\'s footprint, its depth, or anything visible through an archway. Every placed piece is scaled against this number, so it is what lets one 48\" canvas read at the correct size in rooms photographed at different fields of view. Set by the calibration tool in the admin panel.\n'),
   "referenceLengthFeet": zod.number().gt(listRoomsResponseReferenceLengthFeetExclusiveMin).optional().describe('Real length, in decimal feet, of whatever the reference line was laid along to produce `wallWidthFeet` — a door frame, a countertop, a headboard. Kept so the calibration tool reopens on the same reference the room was actually measured against instead of inheriting whatever the previously edited room used.\nOptional: rooms calibrated before this was recorded have no honest value for it, and guessing one would assert a measurement nobody made. A room absent this field is presented against the standard door frame, and gains a stored value the next time it is saved.\n'),
-  "isVisible": zod.boolean().optional().describe('Whether this room is available in the public placement experience.'),
-  "allowArtReuse": zod.boolean().optional().describe('When true, a piece already hanging in another room can also be placed in this one — availability is \"once per room\" rather than the default \"once across the whole session\". Absent on rooms saved before this existed, which reads as false: the original global behavior.\n')
+  "isVisible": zod.boolean().optional().describe('Whether this room is available in the public placement experience.')
 })
 export const ListRoomsResponse = zod.array(ListRoomsResponseItem)
 
@@ -134,8 +133,7 @@ export const CreateRoomBody = zod.object({
   "bandSplit": zod.number().min(1).max(createRoomBodyBandSplitMax),
   "wallWidthFeet": zod.number().gt(createRoomBodyWallWidthFeetExclusiveMin).describe('Real-world back-wall width in decimal feet.'),
   "referenceLengthFeet": zod.number().gt(createRoomBodyReferenceLengthFeetExclusiveMin).describe('Real length in decimal feet of the reference the wall width was measured against. Required here, unlike on `Room`: the admin panel always knows what it measured against, so anything it creates can record it.\n'),
-  "isVisible": zod.boolean().optional().describe('Whether this room is available in the public placement experience.'),
-  "allowArtReuse": zod.boolean().optional().describe('Once-per-room availability instead of once-per-session.')
+  "isVisible": zod.boolean().optional().describe('Whether this room is available in the public placement experience.')
 })
 
 export const createRoomResponseBandSplitMax = 99;
@@ -153,8 +151,7 @@ export const CreateRoomResponse = zod.object({
   "bandSplit": zod.number().min(1).max(createRoomResponseBandSplitMax).describe('Percentage of canvas height. Wall art may only be placed above it, sculptures only below it.\n'),
   "wallWidthFeet": zod.number().gt(createRoomResponseWallWidthFeetExclusiveMin).describe('Real-world width, in decimal feet, of the BACK WALL spanned by the full canvas width — measured corner to corner exactly where that wall fills the frame. Deliberately not the room\'s footprint, its depth, or anything visible through an archway. Every placed piece is scaled against this number, so it is what lets one 48\" canvas read at the correct size in rooms photographed at different fields of view. Set by the calibration tool in the admin panel.\n'),
   "referenceLengthFeet": zod.number().gt(createRoomResponseReferenceLengthFeetExclusiveMin).optional().describe('Real length, in decimal feet, of whatever the reference line was laid along to produce `wallWidthFeet` — a door frame, a countertop, a headboard. Kept so the calibration tool reopens on the same reference the room was actually measured against instead of inheriting whatever the previously edited room used.\nOptional: rooms calibrated before this was recorded have no honest value for it, and guessing one would assert a measurement nobody made. A room absent this field is presented against the standard door frame, and gains a stored value the next time it is saved.\n'),
-  "isVisible": zod.boolean().optional().describe('Whether this room is available in the public placement experience.'),
-  "allowArtReuse": zod.boolean().optional().describe('When true, a piece already hanging in another room can also be placed in this one — availability is \"once per room\" rather than the default \"once across the whole session\". Absent on rooms saved before this existed, which reads as false: the original global behavior.\n')
+  "isVisible": zod.boolean().optional().describe('Whether this room is available in the public placement experience.')
 })
 
 
@@ -181,8 +178,7 @@ export const UpdateRoomBody = zod.object({
   "bandSplit": zod.number().min(1).max(updateRoomBodyBandSplitMax).optional(),
   "wallWidthFeet": zod.number().gt(updateRoomBodyWallWidthFeetExclusiveMin).optional(),
   "referenceLengthFeet": zod.number().gt(updateRoomBodyReferenceLengthFeetExclusiveMin).optional(),
-  "isVisible": zod.boolean().optional().describe('Whether this room is available in the public placement experience.'),
-  "allowArtReuse": zod.boolean().optional().describe('Once-per-room availability instead of once-per-session.')
+  "isVisible": zod.boolean().optional().describe('Whether this room is available in the public placement experience.')
 })
 
 export const updateRoomResponseBandSplitMax = 99;
@@ -200,8 +196,7 @@ export const UpdateRoomResponse = zod.object({
   "bandSplit": zod.number().min(1).max(updateRoomResponseBandSplitMax).describe('Percentage of canvas height. Wall art may only be placed above it, sculptures only below it.\n'),
   "wallWidthFeet": zod.number().gt(updateRoomResponseWallWidthFeetExclusiveMin).describe('Real-world width, in decimal feet, of the BACK WALL spanned by the full canvas width — measured corner to corner exactly where that wall fills the frame. Deliberately not the room\'s footprint, its depth, or anything visible through an archway. Every placed piece is scaled against this number, so it is what lets one 48\" canvas read at the correct size in rooms photographed at different fields of view. Set by the calibration tool in the admin panel.\n'),
   "referenceLengthFeet": zod.number().gt(updateRoomResponseReferenceLengthFeetExclusiveMin).optional().describe('Real length, in decimal feet, of whatever the reference line was laid along to produce `wallWidthFeet` — a door frame, a countertop, a headboard. Kept so the calibration tool reopens on the same reference the room was actually measured against instead of inheriting whatever the previously edited room used.\nOptional: rooms calibrated before this was recorded have no honest value for it, and guessing one would assert a measurement nobody made. A room absent this field is presented against the standard door frame, and gains a stored value the next time it is saved.\n'),
-  "isVisible": zod.boolean().optional().describe('Whether this room is available in the public placement experience.'),
-  "allowArtReuse": zod.boolean().optional().describe('When true, a piece already hanging in another room can also be placed in this one — availability is \"once per room\" rather than the default \"once across the whole session\". Absent on rooms saved before this existed, which reads as false: the original global behavior.\n')
+  "isVisible": zod.boolean().optional().describe('Whether this room is available in the public placement experience.')
 })
 
 

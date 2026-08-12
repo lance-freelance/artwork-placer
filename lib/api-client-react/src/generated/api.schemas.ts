@@ -79,8 +79,6 @@ export interface Room {
   referenceLengthFeet?: number;
   /** Whether this room is available in the public placement experience. */
   isVisible?: boolean;
-  /** When true, a piece already hanging in another room can also be placed in this one — availability is "once per room" rather than the default "once across the whole session". Absent on rooms saved before this existed, which reads as false: the original global behavior. */
-  allowArtReuse?: boolean;
 }
 
 export interface RoomInput {
@@ -105,8 +103,6 @@ export interface RoomInput {
   referenceLengthFeet: number;
   /** Whether this room is available in the public placement experience. */
   isVisible?: boolean;
-  /** Once-per-room availability instead of once-per-session. */
-  allowArtReuse?: boolean;
 }
 
 export interface RoomUpdate {
@@ -125,8 +121,6 @@ export interface RoomUpdate {
   referenceLengthFeet?: number;
   /** Whether this room is available in the public placement experience. */
   isVisible?: boolean;
-  /** Once-per-room availability instead of once-per-session. */
-  allowArtReuse?: boolean;
 }
 
 export type ObjectType = typeof ObjectType[keyof typeof ObjectType];

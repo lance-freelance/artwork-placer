@@ -34,18 +34,6 @@ router.put("/placements", async (req, res): Promise<void> => {
     );
     if (unknown) return { error: unknown };
 
-    // A room holds at most one copy of a piece regardless of its reuse
-    // policy: two placements with the same (objectId, roomId) can only be a
-    // client bug, and rendering keys by objectId within a room assumes it.
-    const seen = new Set<string>();
-    const duplicate = parsed.data.find((p) => {
-      const key = `${p.roomId}\u0000${p.objectId}`;
-      if (seen.has(key)) return true;
-      seen.add(key);
-      return false;
-    });
-    if (duplicate) return { duplicate };
-
     await setPlacements(parsed.data);
     return { saved: parsed.data };
   });
@@ -53,12 +41,6 @@ router.put("/placements", async (req, res): Promise<void> => {
   if (result.error) {
     res.status(409).json({
       error: `Placement references a room or object that no longer exists: ${result.error.roomId} / ${result.error.objectId}`,
-    });
-    return;
-  }
-  if (result.duplicate) {
-    res.status(400).json({
-      error: `Duplicate placement of the same object in the same room: ${result.duplicate.roomId} / ${result.duplicate.objectId}`,
     });
     return;
   }
