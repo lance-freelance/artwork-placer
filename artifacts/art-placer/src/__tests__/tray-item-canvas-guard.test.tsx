@@ -207,9 +207,12 @@ describe('TrayItem — healthy registered canvas', () => {
     // do not collapse into the removed thumbnail's footprint.
     const placeholder = screen.getByTestId('tray-placeholder-art-1');
     expect(placeholder).toBeInTheDocument();
-    // The carousel wrapper owns the complete slot spacing for both states.
-    // This keeps the placeholder and thumbnail at the same occupied width.
-    expect(placeholder.parentElement).toHaveClass('ml-[23px]', 'mr-[23px]');
+
+    // The placeholder must carry the same intrinsic box as the button so the
+    // carousel slot width is unchanged by the state switch.  Both states share
+    // the clamp height and the artwork aspect-ratio; neither carries its own
+    // horizontal margin (that belongs to the InventoryTray wrapper).
+    expect(placeholder).toHaveStyle({ aspectRatio: '1.5' }); // 48in / 32in
     expect(placeholder).not.toHaveClass('ml-[14px]', 'mr-[14px]');
   });
 });
