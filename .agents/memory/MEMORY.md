@@ -7,3 +7,4 @@
 - [Catalog visibility compatibility](room-visibility.md) — missing visibility flags are treated as visible; only explicit false hides a room or art object from the public UX.
 - [Desktop drag selection](art-placer-desktop-selection.md) — a "stuck blue ghost" on desktop is native ::selection, not drag state; keep preventDefault on pointerdown and select-none on the board.
 - [Monorepo typechecking](monorepo-typecheck.md) — always use root `pnpm run typecheck`; a bare per-artifact tsc reads stale lib dist `.d.ts` and invents phantom errors.
+- [Art Placer fullscreen control](art-placer-fullscreen.md) — request fullscreen only from a user gesture, track browser exits, and retain the WebKit fallback for older TV browsers.

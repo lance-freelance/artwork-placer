@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../state/Store';
-import { Undo2, RotateCcw } from 'lucide-react';
+import { Maximize2, Minimize2, Undo2, RotateCcw } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useFullscreen } from '../hooks/useFullscreen';
 
 type Layout = 'vertical' | 'horizontal';
 
@@ -15,6 +16,8 @@ type Layout = 'vertical' | 'horizontal';
  */
 export function Controls({ layout = 'vertical' }: { layout?: Layout }) {
   const { history, undo, resetRoom, resetAll, activeRoomId } = useStore();
+  const { supported: fullscreenSupported, isFullscreen, toggle: toggleFullscreen } =
+    useFullscreen();
 
   const [resetOpen, setResetOpen] = useState(false);
   const resetRef = useRef<HTMLDivElement>(null);
@@ -165,6 +168,26 @@ export function Controls({ layout = 'vertical' }: { layout?: Layout }) {
           )}
         </AnimatePresence>
       </div>
+
+      {fullscreenSupported && (
+        <>
+          {isVertical && <div className="h-3" />}
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            className={cn(
+              'h-9 w-9 rounded-full flex items-center justify-center',
+              'bg-white/35 text-foreground/55 backdrop-blur-sm',
+              'hover:bg-white/75 hover:text-foreground transition-colors',
+              'outline-none focus-visible:ring-2 focus-visible:ring-foreground/50',
+            )}
+            aria-label={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
+            title={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
+          >
+            {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+          </button>
+        </>
+      )}
     </div>
   );
 }
