@@ -50,7 +50,8 @@
       "Bash(pnpm exec *)",
       "Bash(python3 -)",
       "Bash(kill %1)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8080/api/media)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:8080/api/media)",
+      "Bash(git -C /home/runner/workspace diff --stat)"
     ]
   }
 }
