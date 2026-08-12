@@ -44,9 +44,9 @@ export function InventoryTray() {
     return () => observer.disconnect();
   }, [checkScroll]);
 
-  // Content width tracks both lists, not just the catalogue: TrayItem renders a
-  // same-sized placeholder once a piece is on the wall, so placing or recalling
-  // art changes the contents without changing the reserved slot footprint.
+  // Content width tracks both lists, not just the catalogue: TrayItem renders
+  // null once a piece is on the wall, so placing or recalling art changes what
+  // the strip holds without ever resizing the scroller the observer watches.
   useEffect(() => {
     checkScroll();
   }, [artObjects, placements, checkScroll]);
@@ -80,10 +80,7 @@ export function InventoryTray() {
         className="relative z-10 flex gap-5 overflow-x-auto hide-scrollbar items-center min-h-[90px] pl-[21px] pr-[21px]"
       >
         {artObjects.map(obj => (
-            <div
-              key={obj.id}
-              className="shrink-0 flex items-center justify-center ml-[23px] mr-[23px]"
-            >
+          <div key={obj.id} className="shrink-0 flex items-center justify-center ml-[9px] mr-[9px]">
             <TrayItem objectId={obj.id} />
           </div>
         ))}

@@ -131,19 +131,7 @@ export function TrayItem({ objectId }: { objectId: string }) {
     },
   });
 
-  if (isPlaced && !isDragging) {
-    return (
-      <div
-        aria-hidden="true"
-        data-testid={`tray-placeholder-${objectId}`}
-        className="relative shrink-0 rounded-sm border border-foreground/15 bg-foreground/10 shadow-inner pointer-events-none"
-        style={{
-          height: 'clamp(56px, 9vh, 84px)',
-          aspectRatio: aspectRatioOf(obj),
-        }}
-      />
-    );
-  }
+  if (isPlaced && !isDragging) return null;
 
   return (
     <button
@@ -158,7 +146,7 @@ export function TrayItem({ objectId }: { objectId: string }) {
         if (dragging()) return;
         setSelectedObjectId(isSelected ? null : objectId);
       }}
-      className="relative shrink-0 cursor-grab active:cursor-grabbing rounded-sm transition-transform duration-200 outline-none hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="relative shrink-0 cursor-grab active:cursor-grabbing rounded-sm transition-transform duration-200 outline-none hover:-translate-y-1 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ml-[14px] mr-[14px]"
       style={{
         height: 'clamp(56px, 9vh, 84px)',
         aspectRatio: aspectRatioOf(obj),
